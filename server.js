@@ -14,17 +14,12 @@ const auth = new google.auth.GoogleAuth({
 
 // === LIST FILES ENDPOINT ===
 app.get('/list-files', async (req, res) => {
+  const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
+
   try {
-    const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
-
-    // Optional: folderId from query
-    const folderId = req.query.folderId;
-
     const response = await drive.files.list({
-      q: folderId ? `'${folderId}' in parents` : undefined,
-      fields: 'files(id, name, mimeType, modifiedTime)',
-      orderBy: 'modifiedTime desc',
-      pageSize: 100,
+      q: "'1dCYG_EF7m_ZjtQGvmWDcnNNT-OowL9V5' in parents and trashed=false",
+      fields: 'files(id, name)',
     });
 
     res.json(response.data.files);
