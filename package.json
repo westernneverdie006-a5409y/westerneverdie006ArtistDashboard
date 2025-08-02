@@ -1,6 +1,5 @@
 {
-  "name": "westerneverdie006ArtistDashboardRender
-Menu",
+  "name": "westerneverdie006-artist-dashboard-render",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
