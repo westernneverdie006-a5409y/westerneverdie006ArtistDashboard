@@ -33,6 +33,10 @@ app.get('/list-files', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send('🎉 Hello from Render!');
+});
+
 // === Start Server ===
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
