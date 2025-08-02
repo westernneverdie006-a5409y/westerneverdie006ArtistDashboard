@@ -34,7 +34,7 @@ app.get('/list-files', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('🎉 Hello from Render!');
+  res.send('🎉 Render is Online!');
 });
 
 // === Start Server ===
