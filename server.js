@@ -1,43 +1,85 @@
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
+const XLSX = require('xlsx');
 
 const app = express();
-
-// === Middleware ===
 app.use(cors());
-app.use(express.json());
-app.use(express.static('public')); // Serves index.html and other assets
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static('public'));
 
-// === Google Drive Auth ===
 const auth = new google.auth.GoogleAuth({
   credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
-  scopes: ['https://www.googleapis.com/auth/drive.metadata.readonly'],
+  scopes: ['https://www.googleapis.com/auth/drive'],
 });
 
-// === API: List Files in a Specific Folder ===
+// === List Files in Folder ===
 app.get('/list-files', async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
 
     const response = await drive.files.list({
-      q: "'1dCYG_EF7m_ZjtQGvmWDcnNNT-OowL9V5' in parents and trashed=false",
-      fields: 'files(id, name, mimeType, modifiedTime)',
+      q: "'1dCYG_EF7m_ZjtQGvmWDcnNNT-OowL9V5' in parents and trashed=false and mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'",
+      fields: 'files(id, name)',
     });
 
     res.json(response.data.files);
   } catch (error) {
     console.error('Failed to list files:', error.message);
-    res.status(500).json({ error: 'Failed to fetch files from Google Drive.' });
+    res.status(500).json({ error: 'Failed to list files.' });
   }
 });
 
-// === Fallback Home Route ===
+// === Load XLSX as JSON ===
+app.get('/xlsx-to-json/:fileId', async (req, res) => {
+  try {
+    const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
+
+    const response = await drive.files.get(
+      { fileId: req.params.fileId, alt: 'media' },
+      { responseType: 'arraybuffer' }
+    );
+
+    const workbook = XLSX.read(response.data, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    res.json(json);
+  } catch (error) {
+    console.error('Failed to load Excel file:', error.message);
+    res.status(500).json({ error: 'Failed to load file.' });
+  }
+});
+
+// === Upload Edited JSON as XLSX ===
+app.post('/upload-xlsx/:fileId', async (req, res) => {
+  try {
+    const jsonData = req.body.data;
+    const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
+
+    const worksheet = XLSX.utils.json_to_sheet(jsonData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    await drive.files.update({
+      fileId: req.params.fileId,
+      media: {
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        body: Buffer.from(buffer),
+      },
+    });
+
+    res.send('File updated successfully');
+  } catch (error) {
+    console.error('Failed to upload Excel:', error.message);
+    res.status(500).json({ error: 'Failed to upload file.' });
+  }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
-// === Start Server ===
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

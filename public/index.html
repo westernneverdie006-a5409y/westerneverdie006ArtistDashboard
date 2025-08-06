@@ -2,49 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Drive File List</title>
-  <link rel="stylesheet" href="style.css"/> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Edit Google Drive XLSX</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <header>📂 Rendering Files Storage...</header>
+<header>📄 Editable XLSX Files from Google Drive</header>
 
-  <div class="container" id="file-container">
-    <div class="loader">Loading files...</div>
-  </div>
+<div class="container">
+  <div id="file-container"></div>
+  <div id="table-container"></div>
+  <button id="save-btn" style="display:none;">💾 Save Changes</button>
+</div>
 
-  <script>
-    async function fetchFiles() {
-      try {
-        const res = await fetch('/list-files');
-        const files = await res.json();
-        const container = document.getElementById('file-container');
-        container.innerHTML = '';
+<script>
+let currentFileId = null;
 
-        if (files.length === 0) {
-          container.innerHTML = '<p>No files found in the folder.</p>';
-          return;
-        }
+async function fetchFiles() {
+  const res = await fetch('/list-files');
+  const files = await res.json();
+  const container = document.getElementById('file-container');
+  container.innerHTML = '<h3>Select a file to edit:</h3>';
 
-        files.forEach(file => {
-          const fileDiv = document.createElement('div');
-          fileDiv.className = 'file';
+  files.forEach(file => {
+    const btn = document.createElement('button');
+    btn.innerText = file.name;
+    btn.onclick = () => loadFile(file.id);
+    container.appendChild(btn);
+  });
+}
 
-          fileDiv.innerHTML = `
-            <span class="file-name">${file.name}</span>
-            <a class="file-link" href="https://drive.google.com/file/d/${file.id}/view" target="_blank">View</a>
-          `;
+async function loadFile(fileId) {
+  const res = await fetch(`/xlsx-to-json/${fileId}`);
+  const data = await res.json();
+  currentFileId = fileId;
 
-          container.appendChild(fileDiv);
-        });
-      } catch (err) {
-        document.getElementById('file-container').innerHTML = '<p>Error loading files.</p>';
-        console.error(err);
-      }
-    }
+  const container = document.getElementById('table-container');
+  container.innerHTML = '';
 
-    fetchFiles();
-  </script>
+  const table = document.createElement('table');
+  const headerRow = document.createElement('tr');
+
+  const keys = Object.keys(data[0] || {});
+  keys.forEach(key => {
+    const th = document.createElement('th');
+    th.innerText = key;
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    keys.forEach(key => {
+      const td = document.createElement('td');
+      td.contentEditable = true;
+      td.innerText = row[key] || '';
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+
+  container.appendChild(table);
+  document.getElementById('save-btn').style.display = 'inline-block';
+}
+
+document.getElementById('save-btn').onclick = async () => {
+  const table = document.querySelector('#table-container table');
+  const rows = Array.from(table.querySelectorAll('tr'));
+  const headers = Array.from(rows.shift().children).map(th => th.innerText);
+
+  const json = rows.map(row => {
+    const cells = Array.from(row.children);
+    const obj = {};
+    cells.forEach((td, i) => {
+      obj[headers[i]] = td.innerText;
+    });
+    return obj;
+  });
+
+  await fetch(`/upload-xlsx/${currentFileId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: json })
+  });
+
+  alert('✅ File updated on Google Drive!');
+};
+
+fetchFiles();
+</script>
+
 </body>
 </html>
