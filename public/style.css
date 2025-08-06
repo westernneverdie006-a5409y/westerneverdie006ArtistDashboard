@@ -45,27 +45,3 @@ select {
 table button {
   font-size: 0.8rem;
 }
-
-/* Make table rows display in block so we can float delete button */
-.row-wrapper {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.row-wrapper tr {
-  flex-grow: 1;
-  display: table-row;
-}
-
-.delete-btn {
-  background-color: #dc2626;
-  color: white;
-  border: none;
-  margin-left: 10px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
