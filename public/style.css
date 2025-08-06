@@ -30,3 +30,15 @@ td:focus {
 #save-btn {
   margin-top: 1rem;
 }
+
+select, label, #loadBtn {
+  margin-top: 1rem;
+  font-size: 1rem;
+}
+
+select {
+  padding: 0.4rem;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+}
+
