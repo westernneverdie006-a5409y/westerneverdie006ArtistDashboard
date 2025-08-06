@@ -65,14 +65,32 @@
 
   // === DATA ROWS (start from index 1)
   matrix.slice(1).forEach((row, rowIndex) => {
-    const tr = document.createElement('tr');
+  const tr = document.createElement('tr');
 
-    for (let col = 0; col < maxCols; col++) {
-      const td = document.createElement('td');
+  for (let col = 0; col < maxCols; col++) {
+    const td = document.createElement('td');
+
+    // If this is the "Type" column (assume it's column index 1)
+    if (col === 1) {
+      const select = document.createElement('select');
+      const options = ["None", "BosRekomen", "AhliJimat", "PotonganHarga", "Buy1Free1"];
+
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        if ((row[col] || "None") === opt) option.selected = true;
+        select.appendChild(option);
+      });
+
+      td.appendChild(select);
+    } else {
       td.contentEditable = true;
       td.innerText = row[col] ?? '';
-      tr.appendChild(td);
     }
+
+    tr.appendChild(td);
+  }
 
     const deleteTd = document.createElement('td');
     const delBtn = document.createElement('button');
@@ -112,7 +130,11 @@
 
     const matrix = rows.map(row => {
       const cells = Array.from(row.querySelectorAll('td'));
-      return cells.slice(0, -1).map(td => td.innerText);
+      return cells.slice(0, -1).map(td => {
+        const select = td.querySelector('select');
+        return select ? select.value : td.innerText;
+      });
+
     });
 
 // Re-add header row from actual table <th>
