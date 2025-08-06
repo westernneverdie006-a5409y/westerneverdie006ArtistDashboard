@@ -30,7 +30,7 @@ app.get('/list-files', async (req, res) => {
   }
 });
 
-// === Load XLSX as JSON ===
+// === Load XLSX as FULL MATRIX ===
 app.get('/xlsx-to-json/:fileId', async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
@@ -42,31 +42,36 @@ app.get('/xlsx-to-json/:fileId', async (req, res) => {
 
     const workbook = XLSX.read(response.data, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
-    const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-    res.json(json);
+    const sheet = workbook.Sheets[sheetName];
+
+    // 🧠 Return as 2D array to preserve blank rows/columns
+    const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: true });
+
+    res.json(matrix);
   } catch (error) {
     console.error('Failed to load Excel file:', error.message);
     res.status(500).json({ error: 'Failed to load file.' });
   }
 });
 
+
 // === Upload Edited JSON as XLSX ===
 app.post('/upload-xlsx/:fileId', async (req, res) => {
   try {
-    const jsonData = req.body.data;
-    const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
-
-    const worksheet = XLSX.utils.json_to_sheet(jsonData);
+    const matrix = req.body.data;
+    const worksheet = XLSX.utils.aoa_to_sheet(matrix); // ✅ aoa = array of arrays
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
 
     await drive.files.update({
       fileId: req.params.fileId,
       media: {
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        body: Buffer.from(buffer),
-      },
+        body: Buffer.from(buffer)
+      }
     });
 
     res.send('File updated successfully');

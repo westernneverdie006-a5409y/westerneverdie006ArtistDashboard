@@ -39,47 +39,41 @@
 
   async function loadFile(fileId) {
   const res = await fetch(`/xlsx-to-json/${fileId}`);
-  const data = await res.json();
+  const matrix = await res.json(); // Now matrix is a 2D array (rows x cols)
   currentFileId = fileId;
 
   const container = document.getElementById('table-container');
   container.innerHTML = '';
 
   const table = document.createElement('table');
+
+  // Find max column count across all rows
+  const maxCols = Math.max(...matrix.map(row => row.length));
+
+  // Header row (A, B, C, D, ...)
   const headerRow = document.createElement('tr');
-
-  // ✅ Collect all unique keys from all rows (to handle missing keys or blank rows)
-  const keySet = new Set();
-  data.forEach(row => {
-    Object.keys(row || {}).forEach(key => keySet.add(key));
-  });
-  const keys = Array.from(keySet);
-
-  // Header cells
-  keys.forEach(key => {
+  for (let i = 0; i < maxCols; i++) {
     const th = document.createElement('th');
-    th.innerText = key;
+    th.innerText = String.fromCharCode(65 + i); // A, B, C, ...
     headerRow.appendChild(th);
-  });
+  }
 
-  // Add "Actions" column
   const actionTh = document.createElement('th');
   actionTh.innerText = '⛔';
   headerRow.appendChild(actionTh);
-
   table.appendChild(headerRow);
 
-  data.forEach(row => {
+  // Table body
+  matrix.forEach((row, rowIndex) => {
     const tr = document.createElement('tr');
 
-    keys.forEach(key => {
+    for (let col = 0; col < maxCols; col++) {
       const td = document.createElement('td');
       td.contentEditable = true;
-      td.innerText = (row && row[key]) ? row[key] : '';
+      td.innerText = row[col] ?? '';
       tr.appendChild(td);
-    });
+    }
 
-    // Delete button
     const deleteTd = document.createElement('td');
     const delBtn = document.createElement('button');
     delBtn.innerText = '⛔';
@@ -106,6 +100,7 @@
   document.getElementById('save-btn').style.display = 'inline-block';
 }
 
+
   document.getElementById('loadBtn').onclick = () => {
     const fileId = document.getElementById('fileSelect').value;
     if (!fileId) return alert("Please select a file.");
@@ -113,27 +108,23 @@
   };
 
   document.getElementById('save-btn').onclick = async () => {
-    const table = document.querySelector('#table-container table');
-    const rows = Array.from(table.querySelectorAll('tr'));
-    const headers = Array.from(rows.shift().children).map(th => th.innerText);
+  const table = document.querySelector('#table-container table');
+  const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header
 
-    const json = rows.map(row => {
-      const cells = Array.from(row.children);
-      const obj = {};
-      cells.forEach((td, i) => {
-        obj[headers[i]] = td.innerText;
-      });
-      return obj;
-    });
+  const matrix = rows.map(row => {
+    const cells = Array.from(row.querySelectorAll('td'));
+    return cells.slice(0, -1).map(td => td.innerText); // Skip delete button cell
+  });
 
-    await fetch(`/upload-xlsx/${currentFileId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: json })
-    });
+  await fetch(`/upload-xlsx/${currentFileId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: matrix })
+  });
 
-    alert('✅ File updated on Google Drive!');
-  };
+  alert('✅ File updated on Google Drive!');
+};
+
 
   fetchFiles();
 </script>
