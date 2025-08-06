@@ -55,56 +55,35 @@ app.get('/xlsx-to-json/:fileId', async (req, res) => {
 });
 
 // === Upload Edited JSON as XLSX ===
+// === Upload Edited JSON as XLSX ===
 app.post('/upload-xlsx/:fileId', async (req, res) => {
   try {
     const matrix = req.body.data;
 
-    if (!Array.isArray(matrix) || matrix.length === 0) {
-      throw new Error("Invalid matrix data");
-    }
+    // ✅ Filter out rows where columns 0 to 5 are all empty
+    const filteredData = matrix.filter(row => {
+      for (let col = 0; col <= 5; col++) {
+        const cell = row[col];
+        if (cell !== undefined && cell !== null && String(cell).trim() !== '') {
+          return true; // Keep this row
+        }
+      }
+      return false; // Remove this row
+    });
 
-    // Keep header row (row 0)
-    const header = matrix[0];
-
-    // Clean rows: keep only rows that have some content (excluding header)
-    const filteredBody = matrix.slice(1).filter(
-      row => row.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '')
-    );
-
-    const cleanedMatrix = [header, ...filteredBody];
-
-    // Trim trailing empty rows
-    while (
-      cleanedMatrix.length > 1 &&
-      cleanedMatrix[cleanedMatrix.length - 1].every(cell => cell === '' || cell === null || cell === undefined)
-    ) {
-      cleanedMatrix.pop();
-    }
-
-    // Generate worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(cleanedMatrix);
-
-    // Define sheet range manually to prevent 1000+ rows
-    const numRows = cleanedMatrix.length;
-    const numCols = Math.max(...cleanedMatrix.map(row => row.length));
-    const endCol = XLSX.utils.encode_col(numCols - 1);
-    const endRow = numRows;
-    worksheet['!ref'] = `A1:${endCol}${endRow}`;
-
-    // Create workbook
+    const worksheet = XLSX.utils.aoa_to_sheet(filteredData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-    // Upload to Google Drive
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
 
     await drive.files.update({
       fileId: req.params.fileId,
       media: {
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        body: Buffer.from(buffer),
-      },
+        body: Buffer.from(buffer)
+      }
     });
 
     res.send('File updated successfully');
