@@ -59,7 +59,8 @@ app.get('/xlsx-to-json/:fileId', async (req, res) => {
 app.post('/upload-xlsx/:fileId', async (req, res) => {
   try {
     const matrix = req.body.data;
-    const worksheet = XLSX.utils.aoa_to_sheet(matrix); // ✅ aoa = array of arrays
+    const filteredData = data.filter(row => row.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== ''));
+    const worksheet = XLSX.utils.aoa_to_sheet(filteredData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });

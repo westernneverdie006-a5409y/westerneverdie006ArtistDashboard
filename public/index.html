@@ -48,7 +48,7 @@
     const table = document.createElement('table');
     const maxCols = Math.max(...matrix.map(row => row.length));
 
-    // === HEADER ROW ===
+    // === HEADER ROW (non-editable) ===
     const headerRow = document.createElement('tr');
     for (let i = 0; i < maxCols; i++) {
       const th = document.createElement('th');
@@ -67,7 +67,6 @@
       for (let col = 0; col < maxCols; col++) {
         const td = document.createElement('td');
 
-        // TYPE column as dropdown (column index 7)
         if (col === 7) {
           const select = document.createElement('select');
           const options = ["None", "BosRekomen", "AhliJimat", "PotonganHarga", "Buy1Free1"];
@@ -116,25 +115,33 @@
 
   document.getElementById('save-btn').onclick = async () => {
     const table = document.querySelector('#table-container table');
-    const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header
+    const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
 
     const matrix = [];
 
     for (const row of rows) {
-      const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Ignore delete btn
+      const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Ignore last column (delete button)
       const rowData = cells.map(td => {
         const select = td.querySelector('select');
         return select ? select.value : td.innerText.trim();
       });
 
-      // Skip empty rows
-      if (rowData.every(cell => cell === '')) continue;
-
-      matrix.push(rowData);
+      // Only include rows with at least one non-empty value
+      if (rowData.some(cell => cell !== '')) matrix.push(rowData);
     }
 
-    // Add header back
-    const headers = Array.from(table.querySelectorAll('th')).slice(0, -1).map(th => th.innerText);
+    // Remove trailing completely empty rows (optional but safe)
+    while (
+      matrix.length > 0 &&
+      matrix[matrix.length - 1].every(cell => cell === '')
+    ) {
+      matrix.pop();
+    }
+
+    // Add headers as first row
+    const headers = Array.from(table.querySelectorAll('th'))
+      .slice(0, -1)
+      .map(th => th.innerText.trim());
     matrix.unshift(headers);
 
     await fetch(`/upload-xlsx/${currentFileId}`, {
