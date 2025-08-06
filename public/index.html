@@ -48,7 +48,12 @@
   const table = document.createElement('table');
   const headerRow = document.createElement('tr');
 
-  const keys = Object.keys(data[0] || {});
+  // ✅ Collect all unique keys from all rows (to handle missing keys or blank rows)
+  const keySet = new Set();
+  data.forEach(row => {
+    Object.keys(row || {}).forEach(key => keySet.add(key));
+  });
+  const keys = Array.from(keySet);
 
   // Header cells
   keys.forEach(key => {
@@ -70,11 +75,11 @@
     keys.forEach(key => {
       const td = document.createElement('td');
       td.contentEditable = true;
-      td.innerText = row[key] || '';
+      td.innerText = (row && row[key]) ? row[key] : '';
       tr.appendChild(td);
     });
 
-    // Add delete button
+    // Delete button
     const deleteTd = document.createElement('td');
     const delBtn = document.createElement('button');
     delBtn.innerText = '⛔';
@@ -100,7 +105,6 @@
   container.appendChild(table);
   document.getElementById('save-btn').style.display = 'inline-block';
 }
-
 
   document.getElementById('loadBtn').onclick = () => {
     const fileId = document.getElementById('fileSelect').value;
