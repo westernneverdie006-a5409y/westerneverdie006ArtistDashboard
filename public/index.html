@@ -59,7 +59,7 @@
   }
 
   const actionTh = document.createElement('th');
-  actionTh.innerText = '⛔';
+  actionTh.innerText = '';
   headerRow.appendChild(actionTh);
   table.appendChild(headerRow);
 
@@ -77,12 +77,8 @@
     const deleteTd = document.createElement('td');
     const delBtn = document.createElement('button');
     delBtn.innerText = '⛔';
-    delBtn.style.background = '#dc2626';
-    delBtn.style.color = 'white';
-    delBtn.style.border = 'none';
-    delBtn.style.cursor = 'pointer';
-    delBtn.style.padding = '4px 8px';
-    delBtn.style.borderRadius = '4px';
+    delBtn.className = 'delete-btn';
+
 
     delBtn.onclick = () => {
       const confirmDelete = confirm("❗ Are you sure you want to delete this row?");

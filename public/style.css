@@ -45,3 +45,17 @@ select {
 table button {
   font-size: 0.8rem;
 }
+
+.delete-btn {
+  background: transparent;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.delete-btn:hover {
+  background-color: #fdd;
+}
