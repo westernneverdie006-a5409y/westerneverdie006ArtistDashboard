@@ -114,44 +114,42 @@
   };
 
   document.getElementById('save-btn').onclick = async () => {
-    const table = document.querySelector('#table-container table');
-    const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
+  const table = document.querySelector('#table-container table');
+  const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
 
-    const matrix = [];
+  const matrix = [];
 
-    for (const row of rows) {
-      const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Ignore last column (delete button)
-      const rowData = cells.map(td => {
-        const select = td.querySelector('select');
-        return select ? select.value : td.innerText.trim();
-      });
-
-      // Only include rows with at least one non-empty value
-      if (rowData.some(cell => cell !== '')) matrix.push(rowData);
-    }
-
-    // Remove trailing completely empty rows (optional but safe)
-    while (
-      matrix.length > 0 &&
-      matrix[matrix.length - 1].every(cell => cell === '')
-    ) {
-      matrix.pop();
-    }
-
-    // Add headers as first row
-    const headers = Array.from(table.querySelectorAll('th'))
-      .slice(0, -1)
-      .map(th => th.innerText.trim());
-    matrix.unshift(headers);
-
-    await fetch(`/upload-xlsx/${currentFileId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: matrix })
+  for (const row of rows) {
+    const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude delete button cell
+    let rowData = cells.map(td => {
+      const select = td.querySelector('select');
+      return select ? select.value : td.innerText.trim();
     });
 
-    alert('✅ File updated on Google Drive!');
-  };
+    // === Trim trailing empty cells ===
+    while (rowData.length && rowData[rowData.length - 1] === '') {
+      rowData.pop();
+    }
+
+    // === Skip entire empty rows ===
+    if (rowData.length === 0 || rowData.every(cell => cell === '')) continue;
+
+    matrix.push(rowData);
+  }
+
+  // Add back header row
+  const headers = Array.from(table.querySelectorAll('th')).slice(0, -1).map(th => th.innerText);
+  matrix.unshift(headers);
+
+  // POST to server
+  await fetch(`/upload-xlsx/${currentFileId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: matrix })
+  });
+
+  alert('✅ File updated on Google Drive!');
+};
 
   fetchFiles();
 </script>
