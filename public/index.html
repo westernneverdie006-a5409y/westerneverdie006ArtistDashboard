@@ -48,7 +48,7 @@
     const table = document.createElement('table');
     const maxCols = Math.max(...matrix.map(row => row.length));
 
-    // === HEADER ROW (non-editable) ===
+    // === HEADER ROW ===
     const headerRow = document.createElement('tr');
     for (let i = 0; i < maxCols; i++) {
       const th = document.createElement('th');
@@ -60,8 +60,7 @@
     headerRow.appendChild(actionTh);
     table.appendChild(headerRow);
 
-    // === DATA ROWS ===
-    matrix.slice(1).forEach((row, rowIndex) => {
+    function createDataRow(row = []) {
       const tr = document.createElement('tr');
 
       for (let col = 0; col < maxCols; col++) {
@@ -70,7 +69,6 @@
         if (col === 7) {
           const select = document.createElement('select');
           const options = ["None", "BosRekomen", "AhliJimat", "PotonganHarga", "Buy1Free1"];
-
           options.forEach(opt => {
             const option = document.createElement('option');
             option.value = opt;
@@ -78,7 +76,6 @@
             if ((row[col] || "None") === opt) option.selected = true;
             select.appendChild(option);
           });
-
           td.appendChild(select);
         } else {
           td.contentEditable = true;
@@ -100,10 +97,37 @@
       deleteTd.appendChild(delBtn);
       tr.appendChild(deleteTd);
 
+      return tr;
+    }
+
+    matrix.slice(1).forEach((row) => {
+      const tr = createDataRow(row);
       table.appendChild(tr);
     });
 
     container.appendChild(table);
+
+    // === "Add Row" Button ===
+    const addRowBtn = document.createElement('button');
+    addRowBtn.textContent = '➕ Add Row';
+    addRowBtn.onclick = () => {
+      const newRow = createDataRow();
+      table.appendChild(newRow);
+    };
+    container.appendChild(addRowBtn);
+
+    // === "Delete All Rows" Button ===
+    const deleteAllBtn = document.createElement('button');
+    deleteAllBtn.textContent = '🗑️ Delete All Rows';
+    deleteAllBtn.style.marginLeft = '10px';
+    deleteAllBtn.onclick = () => {
+      const confirmAll = confirm("⚠️ Delete all rows (except header)?");
+      if (confirmAll) {
+        Array.from(table.querySelectorAll('tr')).slice(1).forEach(row => row.remove());
+      }
+    };
+    container.appendChild(deleteAllBtn);
+
     document.getElementById('save-btn').style.display = 'inline-block';
   }
 
@@ -114,42 +138,42 @@
   };
 
   document.getElementById('save-btn').onclick = async () => {
-  const table = document.querySelector('#table-container table');
-  const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header row
+    const table = document.querySelector('#table-container table');
+    const rows = Array.from(table.querySelectorAll('tr')).slice(1); // Skip header
 
-  const matrix = [];
+    const matrix = [];
 
-  for (const row of rows) {
-    const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude delete button cell
-    let rowData = cells.map(td => {
-      const select = td.querySelector('select');
-      return select ? select.value : td.innerText.trim();
-    });
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude delete button cell
+      const rowData = cells.map(td => {
+        const select = td.querySelector('select');
+        return select ? select.value : td.innerText.trim();
+      });
 
-    // === Trim trailing empty cells ===
-    while (rowData.length && rowData[rowData.length - 1] === '') {
-      rowData.pop();
+      // Remove rows where cols 0–5 are all empty
+      const isEmpty = rowData.slice(0, 6).every(cell => cell === '');
+      if (isEmpty) continue;
+
+      // Remove trailing empty cells
+      while (rowData.length && rowData[rowData.length - 1] === '') {
+        rowData.pop();
+      }
+
+      matrix.push(rowData);
     }
 
-    // === Skip entire empty rows ===
-    if (rowData.length === 0 || rowData.every(cell => cell === '')) continue;
+    // Header row
+    const headers = Array.from(table.querySelectorAll('th')).slice(0, -1).map(th => th.innerText);
+    matrix.unshift(headers);
 
-    matrix.push(rowData);
-  }
+    await fetch(`/upload-xlsx/${currentFileId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: matrix })
+    });
 
-  // Add back header row
-  const headers = Array.from(table.querySelectorAll('th')).slice(0, -1).map(th => th.innerText);
-  matrix.unshift(headers);
-
-  // POST to server
-  await fetch(`/upload-xlsx/${currentFileId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: matrix })
-  });
-
-  alert('✅ File updated on Google Drive!');
-};
+    alert('✅ File updated on Google Drive!');
+  };
 
   fetchFiles();
 </script>
