@@ -1,10 +1,13 @@
+// server.js
+require('dotenv').config();
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
 const XLSX = require('xlsx');
 const http = require('http');
 const { Server } = require('socket.io');
-const { MongoClient, ServerApiVersion } = require('mongodb'); // Added MongoDB
+const { MongoClient, ServerApiVersion } = require('mongodb'); 
 
 const app = express();
 app.use(cors());
@@ -13,16 +16,14 @@ app.use(express.static('public'));
 
 // === Google Drive Auth ===
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
+  keyFile: process.env.GOOGLE_CREDENTIALS_FILE, // use secret file
   scopes: ['https://www.googleapis.com/auth/drive'],
 });
 
 // === MongoDB Setup ===
-const mongoUri = process.env.MONGO_URI || "mongodb+srv://BorakApp:Cassey5409@westernneverdie006datab.saly3qq.mongodb.net/BorakChatDB?retryWrites=true&w=majority";
-const mongoClient = new MongoClient(mongoUri, {
-  serverApi: { version: ServerApiVersion.v1 },
-  tls: true, // Force TLS
-  tlsAllowInvalidCertificates: false // Ensure certificate is valid
+const mongoClient = new MongoClient(process.env.MONGO_URI, {
+  tls: true, // enforce TLS
+  serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
 });
 
 let chatCollection;
@@ -118,6 +119,11 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
+
+  // Ensure MongoDB is connected
+  if (!chatCollection) {
+    await connectMongo();
+  }
 
   // Send last 50 messages from MongoDB to client
   if (chatCollection) {
