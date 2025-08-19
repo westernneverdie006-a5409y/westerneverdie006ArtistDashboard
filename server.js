@@ -18,9 +18,11 @@ const auth = new google.auth.GoogleAuth({
 });
 
 // === MongoDB Setup ===
-const mongoUri = process.env.MONGO_URI || "mongodb+srv://BorakApp:Cassey5409@westernneverdie006datab.saly3qq.mongodb.net/?retryWrites=true&w=majority";
+const mongoUri = process.env.MONGO_URI || "mongodb+srv://BorakApp:Cassey5409@westernneverdie006datab.saly3qq.mongodb.net/BorakChatDB?retryWrites=true&w=majority";
 const mongoClient = new MongoClient(mongoUri, {
-  serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
+  serverApi: { version: ServerApiVersion.v1 },
+  tls: true, // Force TLS
+  tlsAllowInvalidCertificates: false // Ensure certificate is valid
 });
 
 let chatCollection;
@@ -28,7 +30,7 @@ let chatCollection;
 async function connectMongo() {
   if (chatCollection) return; // already connected
   try {
-    console.log("⏳ Connecting to MongoDB...");
+    console.log("Connecting to MongoDB...");
     await mongoClient.connect();
     const db = mongoClient.db("BorakChatDB");
     chatCollection = db.collection("messages");
@@ -117,9 +119,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
 
-  // Ensure MongoDB is connected
-  if (!chatCollection) await connectMongo();
-
   // Send last 50 messages from MongoDB to client
   if (chatCollection) {
     try {
@@ -149,7 +148,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('🔴 A User Disconnected:', socket.id);
+    console.log('🔴 A user disconnected:', socket.id);
   });
 });
 
