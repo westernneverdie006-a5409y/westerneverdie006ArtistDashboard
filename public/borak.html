@@ -167,16 +167,7 @@
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (input.value) {
-        const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
-        socket.emit('chat message', msgData);
-        input.value = '';
-      }
-    });
-
-    socket.on('chat message', (msgData) => {
+    function addMessage(msgData) {
       const li = document.createElement('li');
       li.classList.add('message');
       li.classList.add(msgData.sender === clientId ? 'sent' : 'received');
@@ -191,13 +182,31 @@
       timestamp.classList.add('timestamp');
       timestamp.textContent = formatTime(new Date(msgData.time));
 
-      li.appendChild(msgData.sender === clientId ? timestamp : avatar);
-      li.appendChild(text);
-      li.appendChild(msgData.sender === clientId ? avatar : timestamp);
+      // Order: [Avatar | Text | Timestamp] for received, [Timestamp | Text | Avatar] for sent
+      if (msgData.sender === clientId) {
+        li.appendChild(timestamp);
+        li.appendChild(text);
+        li.appendChild(avatar);
+      } else {
+        li.appendChild(avatar);
+        li.appendChild(text);
+        li.appendChild(timestamp);
+      }
 
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (input.value) {
+        const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
+        socket.emit('chat message', msgData);
+        input.value = '';
+      }
     });
+
+    socket.on('chat message', addMessage);
   </script>
 </body>
 </html>

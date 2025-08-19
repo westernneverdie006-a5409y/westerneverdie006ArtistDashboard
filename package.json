@@ -10,6 +10,7 @@
     "googleapis": "^133.0.0",
     "cors": "^2.8.5",
     "xlsx": "^0.18.5",
-    "socket.io": "^4.7.2"
+    "socket.io": "^4.7.2",
+    "mongodb": "^5.9.0"
   }
 }
