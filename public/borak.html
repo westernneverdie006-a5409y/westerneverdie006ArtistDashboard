@@ -29,12 +29,15 @@
 
     /* Message bubbles */
     .message {
+      display: flex;
+      align-items: flex-end;
       padding: 10px 14px;
       border-radius: 20px;
       max-width: 70%;
       word-wrap: break-word;
       font-size: 16px;
       line-height: 1.4;
+      position: relative;
     }
 
     .sent {
@@ -42,6 +45,7 @@
       background-color: #0078d7;
       color: white;
       border-bottom-right-radius: 0;
+      justify-content: flex-end;
     }
 
     .received {
@@ -49,6 +53,35 @@
       background-color: #2d2d2d;
       color: #fff;
       border-bottom-left-radius: 0;
+      justify-content: flex-start;
+    }
+
+    /* Timestamp */
+    .timestamp {
+      font-size: 10px;
+      color: #aaa;
+      margin-left: 8px;
+      margin-right: 8px;
+      align-self: flex-end;
+    }
+
+    /* Avatar dot */
+    .avatar {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #fff;
+      margin-right: 6px;
+      margin-left: 6px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .sent .avatar {
+      background-color: #fff;
+    }
+    .received .avatar {
+      background-color: #bbb;
     }
 
     /* Input form */
@@ -130,10 +163,14 @@
     // Generate random client ID for distinguishing sent/received
     const clientId = Math.random().toString(36).substr(2, 9);
 
+    function formatTime(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       if (input.value) {
-        const msgData = { text: input.value, sender: clientId };
+        const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
         socket.emit('chat message', msgData);
         input.value = '';
       }
@@ -143,7 +180,21 @@
       const li = document.createElement('li');
       li.classList.add('message');
       li.classList.add(msgData.sender === clientId ? 'sent' : 'received');
-      li.textContent = msgData.text;
+
+      const avatar = document.createElement('div');
+      avatar.classList.add('avatar');
+
+      const text = document.createElement('span');
+      text.textContent = msgData.text;
+
+      const timestamp = document.createElement('span');
+      timestamp.classList.add('timestamp');
+      timestamp.textContent = formatTime(new Date(msgData.time));
+
+      li.appendChild(msgData.sender === clientId ? timestamp : avatar);
+      li.appendChild(text);
+      li.appendChild(msgData.sender === clientId ? avatar : timestamp);
+
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
     });

@@ -15,6 +15,50 @@ const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/drive'],
 });
 
+// === Replace with your chat JSON file ID on Google Drive ===
+const CHAT_FILE_ID = 'YOUR_CHAT_JSON_FILE_ID';
+
+// === Helper: Read chat history from Drive ===
+async function readChatHistory() {
+  const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
+  try {
+    const res = await drive.files.get(
+      { fileId: CHAT_FILE_ID, alt: 'media' },
+      { responseType: 'stream' }
+    );
+
+    let data = '';
+    return new Promise((resolve, reject) => {
+      res.data
+        .on('data', chunk => (data += chunk))
+        .on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (err) {
+            resolve([]); // Return empty array if JSON invalid
+          }
+        })
+        .on('error', err => reject(err));
+    });
+  } catch (err) {
+    console.error('Failed to read chat JSON:', err.message);
+    return [];
+  }
+}
+
+// === Helper: Write chat history to Drive ===
+async function writeChatHistory(history) {
+  const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
+  const buffer = Buffer.from(JSON.stringify(history, null, 2), 'utf-8');
+  await drive.files.update({
+    fileId: CHAT_FILE_ID,
+    media: {
+      mimeType: 'application/json',
+      body: buffer,
+    },
+  });
+}
+
 // === List Files in Folder ===
 app.get('/list-files', async (req, res) => {
   try {
@@ -104,11 +148,25 @@ const io = new Server(server, {
   cors: { origin: "*" }
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
 
-  socket.on('chat message', (msg) => {
+  // Send existing chat history to newly connected user
+  const history = await readChatHistory();
+  history.forEach(msg => socket.emit('chat message', msg));
+
+  socket.on('chat message', async (msg) => {
     console.log('💬 Message:', msg);
+
+    // Save to Google Drive JSON
+    const chatHistory = await readChatHistory();
+    chatHistory.push(msg);
+
+    // Optional: limit chat history size
+    if (chatHistory.length > 1000) chatHistory.shift();
+
+    await writeChatHistory(chatHistory);
+
     io.emit('chat message', msg); // broadcast to all clients
   });
 
@@ -121,7 +179,6 @@ io.on('connection', (socket) => {
 app.get('/borak', (req, res) => {
   res.sendFile(__dirname + '/public/borak.html');
 });
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
