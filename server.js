@@ -28,7 +28,7 @@ let chatCollection;
 async function connectMongo() {
   if (chatCollection) return; // already connected
   try {
-    console.log("Connecting to MongoDB...");
+    console.log("⏳ Connecting to MongoDB...");
     await mongoClient.connect();
     const db = mongoClient.db("BorakChatDB");
     chatCollection = db.collection("messages");
@@ -116,6 +116,9 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
+
+  // Ensure MongoDB is connected
+  if (!chatCollection) await connectMongo();
 
   // Send last 50 messages from MongoDB to client
   if (chatCollection) {
