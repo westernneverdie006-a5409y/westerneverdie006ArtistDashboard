@@ -36,11 +36,9 @@ async function connectMongo() {
     console.log("✅ Connected to MongoDB!");
   } catch (err) {
     console.error("❌ MongoDB connection error:", err.message);
+    process.exit(1); // Stop server if DB connection fails
   }
 }
-
-// Connect once at startup
-connectMongo().catch(console.error);
 
 // === List Files in Folder ===
 app.get('/list-files', async (req, res) => {
@@ -119,9 +117,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
 
-  // Ensure MongoDB is connected
-  await connectMongo();
-
   // Send last 50 messages from MongoDB to client
   if (chatCollection) {
     try {
@@ -160,7 +155,11 @@ app.get('/borak', (req, res) => {
   res.sendFile(__dirname + '/public/borak.html');
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// === Start Server after MongoDB is connected ===
+(async () => {
+  await connectMongo();
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+})();

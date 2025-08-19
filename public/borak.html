@@ -156,64 +156,67 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const messages = document.getElementById('messages');
 
-    // Generate random client ID for distinguishing sent/received
-    const clientId = Math.random().toString(36).substr(2, 9);
+// Use persistent client ID for this session
+const clientId = localStorage.getItem('clientId') || Math.random().toString(36).substr(2, 9);
+localStorage.setItem('clientId', clientId);
 
-    function formatTime(date) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
+function formatTime(date) {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
-    function addMessage(msgData) {
-      const li = document.createElement('li');
-      li.classList.add('message');
-      li.classList.add(msgData.sender === clientId ? 'sent' : 'received');
+function addMessage(msgData, scroll = true) {
+  const li = document.createElement('li');
+  li.classList.add('message');
+  li.classList.add(msgData.sender === clientId ? 'sent' : 'received');
 
-      const avatar = document.createElement('div');
-      avatar.classList.add('avatar');
+  const avatar = document.createElement('div');
+  avatar.classList.add('avatar');
 
-      const text = document.createElement('span');
-      text.textContent = msgData.text;
+  const text = document.createElement('span');
+  text.textContent = msgData.text;
 
-      const timestamp = document.createElement('span');
-      timestamp.classList.add('timestamp');
-      timestamp.textContent = formatTime(new Date(msgData.time));
+  const timestamp = document.createElement('span');
+  timestamp.classList.add('timestamp');
+  timestamp.textContent = formatTime(new Date(msgData.time));
 
-      // Order: [Avatar | Text | Timestamp] for received, [Timestamp | Text | Avatar] for sent
-      if (msgData.sender === clientId) {
-        li.appendChild(timestamp);
-        li.appendChild(text);
-        li.appendChild(avatar);
-      } else {
-        li.appendChild(avatar);
-        li.appendChild(text);
-        li.appendChild(timestamp);
-      }
+  if (msgData.sender === clientId) {
+    li.appendChild(timestamp);
+    li.appendChild(text);
+    li.appendChild(avatar);
+  } else {
+    li.appendChild(avatar);
+    li.appendChild(text);
+    li.appendChild(timestamp);
+  }
 
-      messages.appendChild(li);
-      messages.scrollTop = messages.scrollHeight;
-    }
+  messages.appendChild(li);
+  if (scroll) messages.scrollTop = messages.scrollHeight;
+}
 
-    // Handle sending new messages
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (input.value) {
-        const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
-        socket.emit('chat message', msgData);
-        input.value = '';
-      }
-    });
+// Send message
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!input.value) return;
 
-    // Receive incoming messages
-    socket.on('chat message', addMessage);
+  const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
+  addMessage(msgData);           // show locally immediately
+  socket.emit('chat message', msgData);
+  input.value = '';
+});
 
-    // Load recent messages from MongoDB on initial connect
-    socket.on('connect', () => {
-      console.log('Connected to chat server');
-    });
+// Receive messages from server
+socket.on('chat message', (msgData) => {
+  // Only add if it's not the one we just displayed
+  if (msgData.sender !== clientId) addMessage(msgData);
+});
+
+socket.on('connect', () => {
+  console.log('Connected to chat server');
+});
   </script>
 </body>
 </html>
