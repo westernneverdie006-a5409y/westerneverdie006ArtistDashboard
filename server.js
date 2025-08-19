@@ -25,10 +25,16 @@ const mongoClient = new MongoClient(mongoUri, {
 
 let chatCollection;
 async function connectMongo() {
-  await mongoClient.connect();
-  const db = mongoClient.db("BorakChatDB");
-  chatCollection = db.collection("messages");
-  console.log("✅ Connected to MongoDB!");
+  try {
+    await mongoClient.connect();
+    const db = mongoClient.db("BorakChatDB");
+    chatCollection = db.collection("messages");
+    // Optional: create index on time for faster queries
+    await chatCollection.createIndex({ time: 1 });
+    console.log("✅ Connected to MongoDB!");
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err);
+  }
 }
 connectMongo().catch(console.error);
 
@@ -111,8 +117,12 @@ io.on('connection', async (socket) => {
 
   // Send last 50 messages from MongoDB to client
   if (chatCollection) {
-    const recentMessages = await chatCollection.find().sort({ time: 1 }).limit(50).toArray();
-    recentMessages.forEach(msg => socket.emit('chat message', msg));
+    try {
+      const recentMessages = await chatCollection.find().sort({ time: 1 }).limit(50).toArray();
+      recentMessages.forEach(msg => socket.emit('chat message', msg));
+    } catch (err) {
+      console.error('Failed to fetch recent messages:', err);
+    }
   }
 
   socket.on('chat message', async (msg) => {
@@ -121,7 +131,15 @@ io.on('connection', async (socket) => {
 
     // Save message to MongoDB
     if (chatCollection) {
-      await chatCollection.insertOne(msg);
+      try {
+        await chatCollection.insertOne({
+          text: msg.text,
+          sender: msg.sender,
+          time: new Date(msg.time)
+        });
+      } catch (err) {
+        console.error('Failed to save message:', err);
+      }
     }
   });
 

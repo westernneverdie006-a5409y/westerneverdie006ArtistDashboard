@@ -197,6 +197,7 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
+    // Handle sending new messages
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       if (input.value) {
@@ -206,7 +207,13 @@
       }
     });
 
+    // Receive incoming messages
     socket.on('chat message', addMessage);
+
+    // Load recent messages from MongoDB on initial connect
+    socket.on('connect', () => {
+      console.log('Connected to chat server');
+    });
   </script>
 </body>
 </html>
