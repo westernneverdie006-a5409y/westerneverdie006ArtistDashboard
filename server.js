@@ -117,6 +117,12 @@ io.on('connection', (socket) => {
   });
 });
 
+// === Serve borak.html ===
+app.get('/borak', (req, res) => {
+  res.sendFile(__dirname + '/public/borak.html');
+});
+
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
