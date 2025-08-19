@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
 const XLSX = require('xlsx');
+const http = require('http');              // 👈 add
+const { Server } = require('socket.io');   // 👈 add
 
 const app = express();
 app.use(cors());
@@ -55,7 +57,6 @@ app.get('/xlsx-to-json/:fileId', async (req, res) => {
 });
 
 // === Upload Edited JSON as XLSX ===
-// === Upload Edited JSON as XLSX ===
 app.post('/upload-xlsx/:fileId', async (req, res) => {
   try {
     const matrix = req.body.data;
@@ -97,7 +98,32 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
+// === SOCKET.IO CHAT SETUP ===
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" }
+});
+
+io.on('connection', (socket) => {
+  console.log('🟢 A user connected:', socket.id);
+
+  socket.on('chat message', (msg) => {
+    console.log('💬 Message:', msg);
+    io.emit('chat message', msg); // broadcast to all clients
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔴 A user disconnected:', socket.id);
+  });
+});
+
+// === Serve borak.html ===
+app.get('/borak', (req, res) => {
+  res.sendFile(__dirname + '/public/borak.html');
+});
+
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
