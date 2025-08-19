@@ -24,17 +24,22 @@ const mongoClient = new MongoClient(mongoUri, {
 });
 
 let chatCollection;
+
 async function connectMongo() {
+  if (chatCollection) return; // already connected
   try {
+    console.log("Connecting to MongoDB...");
     await mongoClient.connect();
     const db = mongoClient.db("BorakChatDB");
     chatCollection = db.collection("messages");
     await chatCollection.createIndex({ time: 1 }); // Optional for faster queries
     console.log("✅ Connected to MongoDB!");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("❌ MongoDB connection error:", err.message);
   }
 }
+
+// Connect once at startup
 connectMongo().catch(console.error);
 
 // === List Files in Folder ===
@@ -115,9 +120,7 @@ io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
 
   // Ensure MongoDB is connected
-  if (!chatCollection) {
-    await connectMongo();
-  }
+  await connectMongo();
 
   // Send last 50 messages from MongoDB to client
   if (chatCollection) {
