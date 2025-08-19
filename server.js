@@ -29,8 +29,7 @@ async function connectMongo() {
     await mongoClient.connect();
     const db = mongoClient.db("BorakChatDB");
     chatCollection = db.collection("messages");
-    // Optional: create index on time for faster queries
-    await chatCollection.createIndex({ time: 1 });
+    await chatCollection.createIndex({ time: 1 }); // Optional for faster queries
     console.log("✅ Connected to MongoDB!");
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
@@ -114,6 +113,11 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
+
+  // Ensure MongoDB is connected
+  if (!chatCollection) {
+    await connectMongo();
+  }
 
   // Send last 50 messages from MongoDB to client
   if (chatCollection) {
