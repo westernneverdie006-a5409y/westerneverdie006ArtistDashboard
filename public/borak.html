@@ -304,37 +304,39 @@ form.addEventListener("submit",(e)=>{
 
 socket.on("chat message",(msg)=>{if(msg.sender!==clientId) addMessage(msg);});
 
-/* === Responsive height & mobile keyboard handling with sticky input & correct messages gap === */
+/* === Enhanced mobile keyboard handling for dynamic keyboard heights === */
 function adjustMessagesHeight() {
   const headerHeight = document.querySelector('header').offsetHeight;
   const formHeight = document.querySelector('#form').offsetHeight;
   let viewportHeight = window.innerHeight;
 
-  // Use visualViewport if available for more accurate height when keyboard is open
+  // Use visualViewport for accurate height when keyboard is open
   if (window.visualViewport) viewportHeight = window.visualViewport.height;
 
   messages.style.height = `${viewportHeight - headerHeight - formHeight}px`;
   scrollToBottomSmooth();
 }
+
 window.addEventListener('resize', adjustMessagesHeight);
 window.addEventListener('orientationchange', adjustMessagesHeight);
 window.addEventListener('load', adjustMessagesHeight);
 
 let initialWindowHeight = window.innerHeight;
 
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => {
+function updateFormTransform() {
+  if (window.visualViewport) {
     const keyboardHeight = window.innerHeight - window.visualViewport.height;
     form.style.transform = keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : '';
-    adjustMessagesHeight();
-  });
+  }
+  adjustMessagesHeight();
+}
+
+if (window.visualViewport) {
+  // real-time keyboard tracking for iOS/Android
+  window.visualViewport.addEventListener('resize', updateFormTransform);
 } else {
   input.addEventListener('focus', () => {
-    setTimeout(() => {
-      const keyboardHeight = initialWindowHeight - window.innerHeight;
-      if (keyboardHeight > 0) form.style.transform = `translateY(-${keyboardHeight}px)`;
-      adjustMessagesHeight();
-    }, 300);
+    setTimeout(updateFormTransform, 300);
   });
   input.addEventListener('blur', () => {
     form.style.transform = '';
@@ -343,7 +345,6 @@ if (window.visualViewport) {
 }
 
 function scrollToBottomSmooth(){
-  // always scroll messages to the bottom of visible area, right above input bar
   messages.scrollTo({top: messages.scrollHeight, behavior: 'smooth'});
 }
 
