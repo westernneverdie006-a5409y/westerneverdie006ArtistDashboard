@@ -260,7 +260,7 @@ if(localStorage.getItem("borakUser")){
   addUserButton.disabled=false;
   if(!users.find(u=>u.email===currentUser.email)) users.push(currentUser);
   renderUsers();
-  headerTitle.textContent=`🚀 Borak Dashboard - ${currentUser.name}`;
+  headerTitle.textContent=`${currentUser.name}`;
 }
 
 loginBtn.addEventListener("click",()=>{
@@ -273,7 +273,7 @@ loginBtn.addEventListener("click",()=>{
   renderUsers();
   loginOverlay.style.display="none";
   addUserButton.disabled=false;
-  headerTitle.textContent=`🚀 Borak Dashboard - ${currentUser.name}`;
+  headerTitle.textContent=`${currentUser.name}`;
 });
 
 document.getElementById("menuToggle").addEventListener("click",()=>{usersSection.classList.toggle("show");});
