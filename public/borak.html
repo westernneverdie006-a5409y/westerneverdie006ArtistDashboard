@@ -304,32 +304,40 @@ form.addEventListener("submit",(e)=>{
 
 socket.on("chat message",(msg)=>{if(msg.sender!==clientId) addMessage(msg);});
 
-/* === Responsive height & mobile keyboard handling === */
+/* === Responsive height & mobile keyboard handling with sticky input === */
 function adjustMessagesHeight() {
   const headerHeight = document.querySelector('header').offsetHeight;
   const formHeight = document.querySelector('#form').offsetHeight;
   messages.style.height = `${window.innerHeight - headerHeight - formHeight}px`;
+  scrollToBottomSmooth();
 }
 window.addEventListener('resize', adjustMessagesHeight);
 window.addEventListener('orientationchange', adjustMessagesHeight);
 window.addEventListener('load', adjustMessagesHeight);
 
-/* Mobile keyboard input adjustment with smooth scroll for new messages */
 let initialWindowHeight = window.innerHeight;
-input.addEventListener('focus', ()=>{
-  setTimeout(()=>{
-    const keyboardHeight = initialWindowHeight - window.innerHeight;
-    if(keyboardHeight>0){
-      form.style.transform = `translateY(-${keyboardHeight}px)`;
+
+// Use VisualViewport if available for real-time keyboard tracking
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    const keyboardHeight = window.innerHeight - window.visualViewport.height;
+    form.style.transform = keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : '';
+    adjustMessagesHeight();
+  });
+} else {
+  // fallback for browsers without VisualViewport
+  input.addEventListener('focus', () => {
+    setTimeout(() => {
+      const keyboardHeight = initialWindowHeight - window.innerHeight;
+      if (keyboardHeight > 0) form.style.transform = `translateY(-${keyboardHeight}px)`;
       adjustMessagesHeight();
-      scrollToBottomSmooth();
-    }
-  }, 300);
-});
-input.addEventListener('blur', ()=>{
-  form.style.transform = '';
-  adjustMessagesHeight();
-});
+    }, 300);
+  });
+  input.addEventListener('blur', () => {
+    form.style.transform = '';
+    adjustMessagesHeight();
+  });
+}
 
 function scrollToBottomSmooth(){
   messages.scrollTo({top: messages.scrollHeight, behavior: 'smooth'});
