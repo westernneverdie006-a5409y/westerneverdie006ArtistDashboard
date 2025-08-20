@@ -2,181 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Borak v3 Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Borak Dashboard</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Segoe UI', sans-serif;
-      background: #121212;
-      color: white;
-      display: flex;
-      flex-direction: column;
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #f4f4f4; 
+      padding: 20px; 
     }
-
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    h1 { color: #333; }
+    form { margin-top: 20px; background: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 0 5px #ccc; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input[type="text"], input[type="email"] { 
+      width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 3px; 
     }
-
-    .message {
-      display: flex;
-      align-items: flex-end;
-      padding: 10px 14px;
-      border-radius: 20px;
-      max-width: 70%;
-      word-wrap: break-word;
-      font-size: 16px;
-      line-height: 1.4;
-      position: relative;
+    button { 
+      margin-top: 15px; padding: 10px 20px; 
+      background: #333; color: #fff; border: none; 
+      border-radius: 3px; cursor: pointer; 
     }
-
-    .sent {
-      align-self: flex-end;
-      background-color: #0078d7;
-      color: white;
-      border-bottom-right-radius: 0;
-      justify-content: flex-end;
+    button:hover { background: #555; }
+    table { 
+      width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; 
     }
-
-    .received {
-      align-self: flex-start;
-      background-color: #2d2d2d;
-      color: #fff;
-      border-bottom-left-radius: 0;
-      justify-content: flex-start;
-    }
-
-    .timestamp {
-      font-size: 10px;
-      color: #aaa;
-      margin-left: 8px;
-      margin-right: 8px;
-      align-self: flex-end;
-    }
-
-    .avatar {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background-color: #fff;
-      margin-right: 6px;
-      margin-left: 6px;
-      flex-shrink: 0;
-      align-self: center;
-    }
-
-    .sent .avatar { background-color: #fff; }
-    .received .avatar { background-color: #bbb; }
-
-    #form {
-      display: flex;
-      padding: 10px;
-      background: #1f1f1f;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
-    }
-
-    #input {
-      flex: 1;
-      padding: 12px 14px;
-      border: none;
-      border-radius: 25px;
-      font-size: 16px;
-      outline: none;
-      background: #2d2d2d;
-      color: white;
-    }
-
-    #input::placeholder { color: #bbb; }
-
-    button {
-      margin-left: 10px;
-      padding: 12px 18px;
-      border: none;
-      background: #0078d7;
-      color: white;
-      border-radius: 25px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background 0.2s;
-    }
-
-    button:hover { background: #005ea2; }
-
-    #messages::-webkit-scrollbar { width: 8px; }
-    #messages::-webkit-scrollbar-thumb {
-      background: #555;
-      border-radius: 4px;
-    }
-
-    @media (max-width: 600px) {
-      .message { font-size: 14px; max-width: 85%; }
-      #input, button { font-size: 14px; padding: 10px 12px; }
-    }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #333; color: #fff; }
   </style>
 </head>
 <body>
-  <ul id="messages"></ul>
-  <form id="form">
-    <input id="input" autocomplete="off" placeholder="Type a message..." />
-    <button>Send</button>
+  <h1>Users from PostgreSQL</h1>
+
+  <!-- Table for showing users -->
+  <table id="usersTable">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Email</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Form for adding a new user -->
+  <form id="addUserForm">
+    <h2>Add New User</h2>
+    <label for="name">Name:</label>
+    <input type="text" id="name" required>
+    
+    <label for="email">Email:</label>
+    <input type="email" id="email" required>
+    
+    <button type="submit">Add User</button>
   </form>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
+    async function loadUsers() {
+      try {
+        const res = await fetch("/api/users");
+        const users = await res.json();
 
-    const clientId = Math.random().toString(36).substr(2, 9);
+        const tbody = document.querySelector("#usersTable tbody");
+        tbody.innerHTML = "";
 
-    function formatTime(date) {
-      return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        users.forEach(user => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${user.id}</td><td>${user.name}</td><td>${user.email}</td>`;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error("Error loading users:", err);
+      }
     }
 
-    function addMessage(msgData) {
-      const li = document.createElement('li');
-      li.classList.add('message');
-      li.classList.add(msgData.sender === clientId ? 'sent' : 'received');
+    async function addUser(event) {
+      event.preventDefault();
 
-      const avatar = document.createElement('div');
-      avatar.classList.add('avatar');
+      const name = document.querySelector("#name").value;
+      const email = document.querySelector("#email").value;
 
-      const text = document.createElement('span');
-      text.textContent = msgData.text;
+      try {
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email })
+        });
 
-      const timestamp = document.createElement('span');
-      timestamp.classList.add('timestamp');
-      timestamp.textContent = formatTime(msgData.time);
-
-      li.appendChild(msgData.sender === clientId ? timestamp : avatar);
-      li.appendChild(text);
-      li.appendChild(msgData.sender === clientId ? avatar : timestamp);
-
-      messages.appendChild(li);
-      messages.scrollTop = messages.scrollHeight;
+        if (res.ok) {
+          alert("✅ User added successfully!");
+          document.querySelector("#addUserForm").reset();
+          loadUsers(); // refresh the table
+        } else {
+          alert("❌ Error adding user");
+        }
+      } catch (err) {
+        console.error("Error adding user:", err);
+      }
     }
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (!input.value) return;
-      const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
-      socket.emit('chat message', msgData);
-      input.value = '';
-      addMessage(msgData);
-    });
+    // Load users on page load
+    window.onload = loadUsers;
 
-    socket.on('chat message', (msgData) => {
-      // Prevent duplicate for own messages
-      if (msgData.sender !== clientId) addMessage(msgData);
-    });
+    // Handle form submit
+    document.querySelector("#addUserForm").addEventListener("submit", addUser);
   </script>
 </body>
 </html>

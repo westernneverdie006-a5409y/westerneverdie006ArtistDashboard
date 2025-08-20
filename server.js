@@ -46,12 +46,54 @@ async function ensureMessagesTable() {
   }
 }
 
+// Ensure users table exists
+async function ensureUsersTable() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL
+      )
+    `);
+    console.log("✅ users table is ready!");
+  } catch (err) {
+    console.error("❌ Failed to create users table:", err);
+  }
+}
+
 pool.connect()
   .then(() => {
     console.log("✅ Connected to PostgreSQL!");
     ensureMessagesTable();
+    ensureUsersTable();
   })
   .catch(err => console.error("❌ PostgreSQL connection error:", err));
+
+// === Users API (for borak.html) ===
+app.get("/api/users", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, name, email FROM users ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error fetching users:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.post("/api/users", async (req, res) => {
+  const { name, email } = req.body;
+  try {
+    const result = await pool.query(
+      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, name, email",
+      [name, email]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("❌ Error inserting user:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
 // === List Files in Google Drive Folder ===
 app.get('/list-files', async (req, res) => {
