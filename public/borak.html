@@ -25,6 +25,20 @@
       font-size: 20px;
       font-weight: 600;
       letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header #menuToggle {
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    header #menuToggle:hover {
+      background: rgba(255,255,255,0.1);
     }
 
     main {
@@ -44,6 +58,11 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    section.hidden {
+      transform: translateX(-110%);
     }
 
     h2 {
@@ -159,52 +178,58 @@
       main {
         grid-template-columns: 1fr;
       }
+      section.hidden {
+        transform: translateX(0);
+      }
     }
   </style>
 </head>
 <body>
   <div id="loginOverlay" style="
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  flex-direction: column;
-">
-  <h2 style="color:white; margin-bottom:20px;">👤 Login to Borak Chat</h2>
-  <input type="text" id="loginName" placeholder="Enter your name" style="
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-    margin-bottom: 10px;
-  "/>
-  <input type="email" id="loginEmail" placeholder="Enter your email" style="
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-    margin-bottom: 15px;
-  "/>
-  <button id="loginBtn" style="
-    padding: 10px 20px;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-    background: #0078d7;
-    color: white;
-    cursor: pointer;
-  ">Login</button>
-</div>
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    flex-direction: column;
+  ">
+    <h2 style="color:white; margin-bottom:20px;">👤 Login to Borak Chat</h2>
+    <input type="text" id="loginName" placeholder="Enter your name" style="
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      margin-bottom: 10px;
+    "/>
+    <input type="email" id="loginEmail" placeholder="Enter your email" style="
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      margin-bottom: 15px;
+    "/>
+    <button id="loginBtn" style="
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      background: #0078d7;
+      color: white;
+      cursor: pointer;
+    ">Login</button>
+  </div>
 
-  <header>🚀 Borak Dashboard v4</header>
+  <header>
+    🚀 Borak Dashboard v4
+    <span id="menuToggle">☰</span>
+  </header>
 
   <main>
     <!-- === USERS DASHBOARD === -->
-    <section>
+    <section id="usersSection" class="hidden">
       <h2>👥 Users</h2>
       <table id="usersTable">
         <thead>
@@ -234,107 +259,117 @@
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
-<script>
-const socket = io();
+  <script>
+    const socket = io();
 
-/* === LOCAL USERS MANAGEMENT === */
-const users = [];
-const usersTableBody = document.querySelector("#usersTable tbody");
-const addUserForm = document.querySelector("#addUserForm");
+    /* === LOCAL USERS MANAGEMENT === */
+    const users = [];
+    const usersTableBody = document.querySelector("#usersTable tbody");
+    const addUserForm = document.querySelector("#addUserForm");
+    const addUserButton = addUserForm.querySelector("button");
 
-function renderUsers() {
-  usersTableBody.innerHTML = "";
-  users.forEach((user, index) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${index + 1}</td><td>${user.name}</td><td>${user.email}</td>`;
-    usersTableBody.appendChild(row);
-  });
-}
+    function renderUsers() {
+      usersTableBody.innerHTML = "";
+      users.forEach((user, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${index + 1}</td><td>${user.name}</td><td>${user.email}</td>`;
+        usersTableBody.appendChild(row);
+      });
+    }
 
-addUserForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const name = document.querySelector("#name").value.trim();
-  const email = document.querySelector("#email").value.trim();
-  if (!name || !email) return;
-  users.push({ name, email });
-  addUserForm.reset();
-  renderUsers();
-});
+    addUserForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.querySelector("#name").value.trim();
+      const email = document.querySelector("#email").value.trim();
+      if (!name || !email) return;
+      users.push({ name, email });
+      addUserForm.reset();
+      renderUsers();
+    });
 
-/* === LOGIN SYSTEM === */
-const loginOverlay = document.getElementById("loginOverlay");
-const loginBtn = document.getElementById("loginBtn");
+    /* === LOGIN SYSTEM === */
+    const loginOverlay = document.getElementById("loginOverlay");
+    const loginBtn = document.getElementById("loginBtn");
+    const usersSection = document.getElementById("usersSection");
 
-let currentUser = null;
+    let currentUser = null;
 
-// If user already in localStorage, auto-login
-if(localStorage.getItem("borakUser")) {
-  currentUser = JSON.parse(localStorage.getItem("borakUser"));
-  loginOverlay.style.display = "none";
-  if (!users.find(u => u.email === currentUser.email)) {
-    users.push(currentUser);
-  }
-  renderUsers();
-}
+    // If user already in localStorage, auto-login
+    if(localStorage.getItem("borakUser")) {
+      currentUser = JSON.parse(localStorage.getItem("borakUser"));
+      loginOverlay.style.display = "none";
+      usersSection.classList.remove("hidden");
+      addUserButton.disabled = false;
+      if (!users.find(u => u.email === currentUser.email)) {
+        users.push(currentUser);
+      }
+      renderUsers();
+    }
 
-// Login button click
-loginBtn.addEventListener("click", () => {
-  const name = document.getElementById("loginName").value.trim();
-  const email = document.getElementById("loginEmail").value.trim();
-  if (!name || !email) return alert("Please enter both name and email.");
+    // Login button click
+    loginBtn.addEventListener("click", () => {
+      const name = document.getElementById("loginName").value.trim();
+      const email = document.getElementById("loginEmail").value.trim();
+      if (!name || !email) return alert("Please enter both name and email.");
 
-  currentUser = { name, email };
-  localStorage.setItem("borakUser", JSON.stringify(currentUser));
+      currentUser = { name, email };
+      localStorage.setItem("borakUser", JSON.stringify(currentUser));
 
-  if (!users.find(u => u.email === email)) {
-    users.push(currentUser);
-  }
-  renderUsers();
+      if (!users.find(u => u.email === email)) {
+        users.push(currentUser);
+      }
+      renderUsers();
 
-  loginOverlay.style.display = "none";
-});
+      loginOverlay.style.display = "none";
+      usersSection.classList.remove("hidden");
+      addUserButton.disabled = false;
+    });
 
-/* === CHAT === */
-const form = document.getElementById('form');
-const input = document.getElementById('input');
-const messages = document.getElementById('messages');
-const clientId = Math.random().toString(36).substr(2, 9);
+    /* === TOGGLE USERS MENU === */
+    const menuToggle = document.getElementById("menuToggle");
+    menuToggle.addEventListener("click", () => {
+      usersSection.classList.toggle("hidden");
+    });
 
-function formatTime(date) {
-  return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+    /* === CHAT === */
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+    const clientId = Math.random().toString(36).substr(2, 9);
 
-function addMessage(msgData) {
-  const div = document.createElement('div');
-  div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
-  div.innerHTML = `
-    ${msgData.text}
-    <span class="timestamp">${formatTime(msgData.time)}</span>
-  `;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-}
+    function formatTime(date) {
+      return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  if (!input.value) return;
-  if (!currentUser) return alert("Please login first!");
+    function addMessage(msgData) {
+      const div = document.createElement('div');
+      div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
+      div.innerHTML = `
+        ${msgData.text}
+        <span class="timestamp">${formatTime(msgData.time)}</span>
+      `;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
 
-  const msgData = { 
-    text: `${currentUser.name}: ${input.value}`, 
-    sender: clientId, 
-    time: new Date().toISOString() 
-  };
-  socket.emit('chat message', msgData);
-  input.value = '';
-  addMessage(msgData);
-});
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!input.value) return;
+      if (!currentUser) return alert("Please login first!");
 
-socket.on('chat message', (msgData) => {
-  if (msgData.sender !== clientId) addMessage(msgData);
-});
-</script>
+      const msgData = { 
+        text: `${currentUser.name}: ${input.value}`, 
+        sender: clientId, 
+        time: new Date().toISOString() 
+      };
+      socket.emit('chat message', msgData);
+      input.value = '';
+      addMessage(msgData);
+    });
 
-
+    socket.on('chat message', (msgData) => {
+      if (msgData.sender !== clientId) addMessage(msgData);
+    });
+  </script>
 </body>
 </html>
