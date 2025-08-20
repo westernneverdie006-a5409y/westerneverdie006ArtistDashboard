@@ -5,9 +5,15 @@
 <title>Borak Dashboard v4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
-  body {
+  html, body {
     margin: 0;
     padding: 0;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+
+  body {
     font-family: 'Segoe UI', sans-serif;
     background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
     color: #fff;
@@ -15,10 +21,11 @@
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
+    padding-top: env(safe-area-inset-top);
   }
 
   header {
-    padding: env(safe-area-inset-top,15px) 16px 12px 16px;
+    padding: 12px 16px;
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(12px);
     box-shadow: 0 2px 6px rgba(0,0,0,0.4);
@@ -27,6 +34,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
+    z-index: 10;
   }
 
   header #menuToggle {
@@ -112,6 +121,8 @@
     padding: 10px 16px;
     background: rgba(0,0,0,0.15);
     border-top: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    z-index: 5;
   }
   #input {
     flex: 1;
@@ -169,6 +180,7 @@
     #form button { font-size: 13px; }
     #usersSection { width: 100%; left: -100%; }
     #usersSection.show { left: 0; }
+    #messages { padding-bottom: 60px; } /* extra space for input bar */
   }
 </style>
 </head>
