@@ -304,21 +304,19 @@ form.addEventListener("submit",(e)=>{
 
 socket.on("chat message",(msg)=>{if(msg.sender!==clientId) addMessage(msg);});
 
-/* === Corrected mobile keyboard & messages gap handling === */
+/* === Enhanced mobile keyboard handling with smooth animation & correct messages height === */
+let initialWindowHeight = window.innerHeight;
+
 function adjustMessagesHeight() {
   const headerHeight = document.querySelector('header').offsetHeight;
   const formHeight = document.querySelector('#form').offsetHeight;
   let viewportHeight = window.innerHeight;
 
-  // Use visualViewport if available
-  if (window.visualViewport) {
-    viewportHeight = window.visualViewport.height;
-  }
+  // Use visualViewport if available for better mobile keyboard detection
+  if (window.visualViewport) viewportHeight = window.visualViewport.height;
 
-  // calculate messages height exactly
   const messagesHeight = viewportHeight - headerHeight - formHeight;
   messages.style.height = `${messagesHeight > 0 ? messagesHeight : 0}px`;
-
   scrollToBottomSmooth();
 }
 
@@ -331,14 +329,19 @@ function updateFormTransform() {
     keyboardHeight = initialWindowHeight - window.innerHeight;
   }
 
+  // Smooth animation when keyboard opens/closes
+  form.style.transition = 'transform 0.25s ease';
+  messages.style.transition = 'height 0.25s ease';
+
   form.style.transform = keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : '';
   adjustMessagesHeight();
 }
 
-// Track keyboard / viewport changes
+// VisualViewport support (modern browsers, iOS & Android)
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', updateFormTransform);
 } else {
+  // fallback for older devices
   input.addEventListener('focus', () => setTimeout(updateFormTransform, 100));
   input.addEventListener('blur', () => {
     form.style.transform = '';
@@ -346,16 +349,16 @@ if (window.visualViewport) {
   });
 }
 
-// ensure messages are always scrolled to bottom
+// Always scroll messages to bottom smoothly
 function scrollToBottomSmooth(){
   messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
 }
 
-// initialize heights
-let initialWindowHeight = window.innerHeight;
+// Initial adjustments
 window.addEventListener('resize', adjustMessagesHeight);
 window.addEventListener('orientationchange', adjustMessagesHeight);
 window.addEventListener('load', adjustMessagesHeight);
+
 
 
 </script>
