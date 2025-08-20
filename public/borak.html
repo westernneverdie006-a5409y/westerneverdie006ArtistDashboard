@@ -197,42 +197,70 @@
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
+  <script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
 
-    /* === CHAT === */
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
-    const clientId = Math.random().toString(36).substr(2, 9);
+  /* === LOCAL USERS MANAGEMENT === */
+  const users = []; // Local array to store users
+  const usersTableBody = document.querySelector("#usersTable tbody");
+  const addUserForm = document.querySelector("#addUserForm");
 
-    function formatTime(date) {
-      return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function addMessage(msgData) {
-      const div = document.createElement('div');
-      div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
-      div.innerHTML = `
-        ${msgData.text}
-        <span class="timestamp">${formatTime(msgData.time)}</span>
-      `;
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
-    }
-
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (!input.value) return;
-      const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
-      socket.emit('chat message', msgData);
-      input.value = '';
-      addMessage(msgData);
+  function renderUsers() {
+    usersTableBody.innerHTML = "";
+    users.forEach((user, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${index + 1}</td><td>${user.name}</td><td>${user.email}</td>`;
+      usersTableBody.appendChild(row);
     });
+  }
 
-    socket.on('chat message', (msgData) => {
-      if (msgData.sender !== clientId) addMessage(msgData);
-    });
-  </script>
+  addUserForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = document.querySelector("#name").value.trim();
+    const email = document.querySelector("#email").value.trim();
+    if (!name || !email) return;
+    users.push({ name, email });
+    addUserForm.reset();
+    renderUsers();
+  });
+
+  window.onload = renderUsers;
+
+  /* === CHAT === */
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+  const messages = document.getElementById('messages');
+  const clientId = Math.random().toString(36).substr(2, 9);
+
+  function formatTime(date) {
+    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function addMessage(msgData) {
+    const div = document.createElement('div');
+    div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
+    div.innerHTML = `
+      ${msgData.text}
+      <span class="timestamp">${formatTime(msgData.time)}</span>
+    `;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!input.value) return;
+    const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
+    socket.emit('chat message', msgData);
+    input.value = '';
+    addMessage(msgData);
+  });
+
+  socket.on('chat message', (msgData) => {
+    if (msgData.sender !== clientId) addMessage(msgData);
+  });
+</script>
+
 </body>
 </html>

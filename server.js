@@ -17,7 +17,7 @@ const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/drive'],
 });
 
-// === PostgreSQL Setup ===
+// === PostgreSQL Setup (for chat messages only) ===
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || undefined,
   host: process.env.PGHOST,
@@ -54,7 +54,7 @@ pool.connect()
   })
   .catch(err => console.error("❌ PostgreSQL connection error:", err));
 
-// === List Files in Google Drive Folder ===
+// === Google Drive XLSX Routes ===
 app.get('/list-files', async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
@@ -69,7 +69,6 @@ app.get('/list-files', async (req, res) => {
   }
 });
 
-// === Load XLSX as FULL MATRIX ===
 app.get('/xlsx-to-json/:fileId', async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
@@ -88,7 +87,6 @@ app.get('/xlsx-to-json/:fileId', async (req, res) => {
   }
 });
 
-// === Upload Edited JSON as XLSX ===
 app.post('/upload-xlsx/:fileId', async (req, res) => {
   try {
     const matrix = req.body.data;
@@ -120,10 +118,9 @@ app.post('/upload-xlsx/:fileId', async (req, res) => {
   }
 });
 
-// === Serve index.html ===
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
+// === Serve HTML ===
+app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
+app.get('/borak', (req, res) => res.sendFile(__dirname + '/public/borak.html'));
 
 // === SOCKET.IO CHAT SETUP ===
 const server = http.createServer(app);
@@ -159,11 +156,6 @@ io.on('connection', async (socket) => {
   socket.on('disconnect', () => {
     console.log('🔴 A user disconnected:', socket.id);
   });
-});
-
-// === Serve borak.html ===
-app.get('/borak', (req, res) => {
-  res.sendFile(__dirname + '/public/borak.html');
 });
 
 const PORT = process.env.PORT || 3000;
