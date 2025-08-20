@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel - Fluent Dark</title>
-  <!-- ✅ Use Tailwind build from output.css -->
+  <!-- Tailwind CSS -->
   <link rel="stylesheet" href="/static/output.css">
 </head>
 <body class="bg-gray-900 text-white flex min-h-screen">
@@ -71,7 +71,8 @@
   <script>
     async function loadData() {
       try {
-        const users = await (await fetch('/api/users')).json();
+        const usersRes = await fetch('/api/users');
+        const users = usersRes.ok ? await usersRes.json() : [];
         if (Array.isArray(users)) {
           document.getElementById('usersTable').innerHTML = users.map(u => `
             <tr class="hover:bg-gray-700">
@@ -82,7 +83,8 @@
           `).join('');
         }
 
-        const messages = await (await fetch('/api/messages')).json();
+        const messagesRes = await fetch('/api/messages');
+        const messages = messagesRes.ok ? await messagesRes.json() : [];
         if (Array.isArray(messages)) {
           document.getElementById('messagesTable').innerHTML = messages.map(m => `
             <tr class="hover:bg-gray-700">
