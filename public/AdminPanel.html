@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Artist Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/2.0.0/modern-normalize.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+      background: #f3f3f3;
+      color: #1b1b1b;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: #ffffff;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar h2 {
+      padding: 1rem;
+      margin: 0;
+      background: #0078d4;
+      color: white;
+      font-size: 1.1rem;
+    }
+    .sidebar a {
+      padding: 12px 16px;
+      text-decoration: none;
+      color: #333;
+      display: block;
+      transition: background 0.2s;
+    }
+    .sidebar a:hover {
+      background: #e6f2fb;
+    }
+    /* Main */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      height: 60px;
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-weight: 600;
+    }
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f3f3f3;
+    }
+    tr:hover {
+      background: #f9f9f9;
+    }
+    /* Buttons */
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-primary {
+      background: #0078d4;
+      color: white;
+    }
+    .btn-danger {
+      background: #d83b01;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="#" onclick="loadUsers()">👤 Users</a>
+    <a href="#" onclick="loadMessages()">💬 Messages</a>
+    <a href="#">⚙️ Settings</a>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <span>Artist Dashboard Panel</span>
+      <span>Admin 👑</span>
+    </div>
+    <div class="content" id="content">
+      <h2>Welcome to Admin Panel</h2>
+      <p>Select a section from the sidebar.</p>
+    </div>
+  </div>
+
+  <script>
+    async function loadUsers() {
+      const res = await fetch('/api/users');
+      const users = await res.json();
+      let html = `
+        <h2>Users</h2>
+        <button class="btn btn-primary" onclick="addUser()">+ Add User</button>
+        <table>
+          <tr><th>ID</th><th>Username</th><th>Actions</th></tr>
+      `;
+      users.forEach(u => {
+        html += `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.username}</td>
+            <td>
+              <button class="btn btn-danger" onclick="deleteUser(${u.id})">Delete</button>
+            </td>
+          </tr>`;
+      });
+      html += `</table>`;
+      document.getElementById('content').innerHTML = html;
+    }
+
+    async function loadMessages() {
+      const res = await fetch('/api/messages');
+      const msgs = await res.json();
+      let html = `
+        <h2>Messages</h2>
+        <table>
+          <tr><th>ID</th><th>User ID</th><th>Message</th></tr>
+      `;
+      msgs.forEach(m => {
+        html += `<tr><td>${m.id}</td><td>${m.user_id}</td><td>${m.message}</td></tr>`;
+      });
+      html += `</table>`;
+      document.getElementById('content').innerHTML = html;
+    }
+
+    async function addUser() {
+      const username = prompt("Enter username:");
+      if (!username) return;
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+      loadUsers();
+    }
+
+    async function deleteUser(id) {
+      if (!confirm("Delete user?")) return;
+      await fetch('/api/users/' + id, { method: 'DELETE' });
+      loadUsers();
+    }
+  </script>
+</body>
+</html>
