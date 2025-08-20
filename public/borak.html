@@ -28,6 +28,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      overflow-x: auto;
     }
 
     header #menuToggle {
@@ -36,6 +37,7 @@
       padding: 5px 10px;
       border-radius: 8px;
       transition: background 0.2s;
+      flex-shrink: 0;
     }
     header #menuToggle:hover {
       background: rgba(255,255,255,0.1);
@@ -71,6 +73,7 @@
       transition: left 0.3s ease;
       background: rgba(30,30,30,0.95);
       backdrop-filter: blur(10px);
+      overflow-y: auto;
     }
     #usersSection.show {
       left: 0;
@@ -231,7 +234,7 @@
   </div>
 
   <header>
-    🚀 Borak Dashboard v4
+    <span id="headerTitle">🚀 Borak Dashboard v4</span>
     <span id="menuToggle">☰</span>
   </header>
 
@@ -269,6 +272,7 @@
     const usersTableBody = document.querySelector("#usersTable tbody");
     const addUserForm = document.querySelector("#addUserForm");
     const addUserButton = addUserForm.querySelector("button");
+    const headerTitle = document.getElementById("headerTitle");
 
     function renderUsers() {
       usersTableBody.innerHTML = "";
@@ -301,6 +305,7 @@
       addUserButton.disabled = false;
       if (!users.find(u => u.email === currentUser.email)) users.push(currentUser);
       renderUsers();
+      headerTitle.textContent = `🚀 Borak Dashboard - ${currentUser.name}`;
     }
 
     loginBtn.addEventListener("click", () => {
@@ -314,6 +319,7 @@
       renderUsers();
       loginOverlay.style.display = "none";
       addUserButton.disabled = false;
+      headerTitle.textContent = `🚀 Borak Dashboard - ${currentUser.name}`;
     });
 
     /* === MENU SLIDE IN/OUT === */
@@ -322,7 +328,6 @@
       usersSection.classList.toggle("show");
     });
 
-    // Close menu when clicking outside
     document.addEventListener("click", (e) => {
       if (!usersSection.contains(e.target) && !menuToggle.contains(e.target)) {
         usersSection.classList.remove("show");
