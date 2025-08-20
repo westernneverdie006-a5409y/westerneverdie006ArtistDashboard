@@ -235,6 +235,7 @@ const input = document.getElementById("input");
 const clientId = Math.random().toString(36).substr(2,9);
 let currentUser = null;
 
+// Users rendering
 function renderUsers(){
   usersTableBody.innerHTML="";
   users.forEach((u,i)=>{
@@ -244,6 +245,7 @@ function renderUsers(){
   });
 }
 
+// Add user form
 addUserForm.addEventListener("submit",(e)=>{
   e.preventDefault();
   const name=document.querySelector("#name").value.trim();
@@ -254,6 +256,7 @@ addUserForm.addEventListener("submit",(e)=>{
   renderUsers();
 });
 
+// Login
 if(localStorage.getItem("borakUser")){
   currentUser=JSON.parse(localStorage.getItem("borakUser"));
   loginOverlay.style.display="none";
@@ -276,6 +279,7 @@ loginBtn.addEventListener("click",()=>{
   headerTitle.textContent=`${currentUser.name}`;
 });
 
+// Users toggle
 document.getElementById("menuToggle").addEventListener("click",()=>{usersSection.classList.toggle("show");});
 document.addEventListener("click",(e)=>{
   if(!usersSection.contains(e.target)&&!document.getElementById("menuToggle").contains(e.target)){
@@ -283,7 +287,11 @@ document.addEventListener("click",(e)=>{
   }
 });
 
-function formatTime(date){return new Date(date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+// Messages
+function formatTime(date){
+  return new Date(date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
 function addMessage(msg){
   const div=document.createElement("div");
   div.classList.add("message",msg.sender===clientId?"sent":"received");
@@ -292,6 +300,7 @@ function addMessage(msg){
   scrollToBottomSmooth();
 }
 
+// Send message
 form.addEventListener("submit",(e)=>{
   e.preventDefault();
   if(!input.value) return;
@@ -304,15 +313,14 @@ form.addEventListener("submit",(e)=>{
 
 socket.on("chat message",(msg)=>{if(msg.sender!==clientId) addMessage(msg);});
 
-/* === Enhanced mobile keyboard handling with smooth animation & correct messages height === */
+/* === Mobile keyboard & messages height handling === */
 let initialWindowHeight = window.innerHeight;
+const headerHeight = document.querySelector('header').offsetHeight;
 
 function adjustMessagesHeight() {
-  const headerHeight = document.querySelector('header').offsetHeight;
-  const formHeight = document.querySelector('#form').offsetHeight;
+  const formHeight = form.offsetHeight;
   let viewportHeight = window.innerHeight;
 
-  // Use visualViewport if available for better mobile keyboard detection
   if (window.visualViewport) viewportHeight = window.visualViewport.height;
 
   const messagesHeight = viewportHeight - headerHeight - formHeight;
@@ -323,25 +331,19 @@ function adjustMessagesHeight() {
 function updateFormTransform() {
   let keyboardHeight = 0;
 
-  if (window.visualViewport) {
-    keyboardHeight = window.innerHeight - window.visualViewport.height;
-  } else {
-    keyboardHeight = initialWindowHeight - window.innerHeight;
-  }
+  if (window.visualViewport) keyboardHeight = window.innerHeight - window.visualViewport.height;
+  else keyboardHeight = initialWindowHeight - window.innerHeight;
 
-  // Smooth animation when keyboard opens/closes
   form.style.transition = 'transform 0.25s ease';
   messages.style.transition = 'height 0.25s ease';
-
   form.style.transform = keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : '';
   adjustMessagesHeight();
 }
 
-// VisualViewport support (modern browsers, iOS & Android)
+// Track viewport changes
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', updateFormTransform);
 } else {
-  // fallback for older devices
   input.addEventListener('focus', () => setTimeout(updateFormTransform, 100));
   input.addEventListener('blur', () => {
     form.style.transform = '';
@@ -349,7 +351,7 @@ if (window.visualViewport) {
   });
 }
 
-// Always scroll messages to bottom smoothly
+// Scroll to bottom smoothly
 function scrollToBottomSmooth(){
   messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
 }
@@ -358,8 +360,6 @@ function scrollToBottomSmooth(){
 window.addEventListener('resize', adjustMessagesHeight);
 window.addEventListener('orientationchange', adjustMessagesHeight);
 window.addEventListener('load', adjustMessagesHeight);
-
-
 
 </script>
 </body>
