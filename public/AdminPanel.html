@@ -4,16 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel - Fluent Dark</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
-    .card { @apply bg-gray-800 text-gray-100 shadow-xl rounded-xl p-6 border border-gray-700; }
-    .table-header { @apply bg-gray-700 text-gray-200 text-sm; }
-    .table-row { @apply hover:bg-gray-700 transition text-sm; }
-    .sidebar { @apply bg-gray-850 border-r border-gray-700 min-h-screen p-4; }
-    .sidebar a { @apply block py-2 px-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition; }
-    .sidebar h2 { @apply text-lg font-bold text-gray-200 mb-3; }
-  </style>
+  <link href="output.css" rel="stylesheet">
 </head>
 <body class="bg-gray-900 text-white flex min-h-screen">
 
@@ -32,7 +23,10 @@
   <div class="flex-1 flex flex-col">
     <header class="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
       <h1 class="text-xl font-bold">📊 Dashboard</h1>
-      <button class="bg-gray-700 px-3 py-1 rounded-lg text-sm hover:bg-gray-600">Logout</button>
+      <div class="flex gap-2">
+        <button id="themeToggle" class="bg-gray-700 px-3 py-1 rounded-lg text-sm hover:bg-gray-600">🌙 Toggle</button>
+        <button class="bg-red-600 px-3 py-1 rounded-lg text-sm hover:bg-red-500">Logout</button>
+      </div>
     </header>
 
     <main class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -76,9 +70,7 @@
   <script>
     async function loadData() {
       try {
-        // Fetch users
-        const usersRes = await fetch('/api/users');
-        const users = await usersRes.json();
+        const users = await (await fetch('/api/users')).json();
         document.getElementById('usersTable').innerHTML = users.map(u => `
           <tr class="table-row">
             <td class="p-2">${u.id}</td>
@@ -87,9 +79,7 @@
           </tr>
         `).join('');
 
-        // Fetch messages
-        const msgRes = await fetch('/api/messages');
-        const messages = await msgRes.json();
+        const messages = await (await fetch('/api/messages')).json();
         document.getElementById('messagesTable').innerHTML = messages.map(m => `
           <tr class="table-row">
             <td class="p-2">${m.id}</td>
@@ -99,11 +89,17 @@
           </tr>
         `).join('');
       } catch (err) {
-        console.error('Errdor loading data:', err);
+        console.error('Error loading data:', err);
       }
     }
-
     loadData();
+
+    // Dark/Light toggle
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      document.body.classList.toggle('bg-white');
+      document.body.classList.toggle('text-black');
+    });
   </script>
 </body>
 </html>
