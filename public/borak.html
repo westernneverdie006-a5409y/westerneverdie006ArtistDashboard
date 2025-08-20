@@ -1,137 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Borak Dashboard v4</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
+  <meta charset="UTF-8">
+  <title>Borak Dashboard v4</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-x: hidden;
+    }
 
-  header {
-    padding: 15px 20px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-    font-size: 20px;
-    font-weight: 600;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+    header {
+      padding: env(safe-area-inset-top, 12px) 16px 12px 16px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: auto;
+    }
 
-  header #menuToggle {
-    font-size: 24px;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 8px;
-    transition: background 0.2s;
-  }
-  header #menuToggle:hover {
-    background: rgba(255,255,255,0.1);
-  }
+    header #menuToggle {
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 8px;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    header #menuToggle:hover {
+      background: rgba(255,255,255,0.1);
+    }
 
-  #usersSection {
-    position: fixed;
-    top: 0;
-    left: -300px;
-    width: 280px;
-    height: 100%;
-    background: rgba(30,30,30,0.95);
-    backdrop-filter: blur(10px);
-    overflow-y: auto;
-    transition: left 0.3s ease;
-    z-index: 1000;
-    padding: 20px;
-  }
-  #usersSection.show { left: 0; }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px;
+      position: relative;
+    }
 
-  #usersSection h2 { margin-top: 0; }
-  #usersSection table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 15px;
-  }
-  #usersSection th, #usersSection td {
-    padding: 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-  }
-  #usersSection th { background: rgba(255,255,255,0.08); }
+    section {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(15px);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    scroll-behavior: smooth;
-  }
-  .message {
-    padding: 10px 14px;
-    border-radius: 20px;
-    max-width: 70%;
-    word-wrap: break-word;
-    font-size: 15px;
-    line-height: 1.4;
-    position: relative;
-  }
-  .sent {
-    align-self: flex-end;
-    background: #0078d7;
-    color: white;
-    border-bottom-right-radius: 4px;
-  }
-  .received {
-    align-self: flex-start;
-    background: rgba(255,255,255,0.1);
-    color: white;
-    border-bottom-left-radius: 4px;
-  }
-  .timestamp {
-    font-size: 11px;
-    color: #aaa;
-    margin-top: 4px;
-    display: block;
-    text-align: right;
-  }
+    #usersSection {
+      position: fixed;
+      top: 0;
+      left: -350px;
+      width: 300px;
+      height: 100%;
+      z-index: 1000;
+      transition: left 0.3s ease;
+      background: rgba(30,30,30,0.95);
+      backdrop-filter: blur(10px);
+      overflow-y: auto;
+    }
+    #usersSection.show {
+      left: 0;
+    }
 
-  #form {
-    display: flex;
-    gap: 10px;
-    padding: 10px 20px;
-    background: rgba(0,0,0,0.15);
-    border-top: 1px solid rgba(255,255,255,0.1);
-  }
-  #input {
-    flex: 1;
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: none;
-    background: rgba(255,255,255,0.1);
-    color: white;
-    font-size: 15px;
-    outline: none;
-  }
-  #form button {
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: none;
-    background: #0078d7;
-    color: white;
-    cursor: pointer;
-  }
+    h2 {
+      margin: 0 0 15px;
+      font-size: 18px;
+      font-weight: 600;
+    }
 
-  #loginOverlay {
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    th {
+      background: rgba(255,255,255,0.08);
+      font-weight: 600;
+    }
+
+    form {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    input[type="text"], input[type="email"], #input {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      outline: none;
+    }
+    input::placeholder {
+      color: #bbb;
+    }
+    button {
+      background: #0078d7;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #005ea2;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .message {
+      padding: 10px 14px;
+      border-radius: 20px;
+      max-width: 70%;
+      word-wrap: break-word;
+      font-size: 15px;
+      line-height: 1.4;
+      position: relative;
+    }
+    .sent {
+      align-self: flex-end;
+      background: #0078d7;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .received {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+    .timestamp {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 4px;
+      display: block;
+      text-align: right;
+    }
+
+    #form {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    #messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    #messages::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 4px;
+    }
+
+    /* === MOBILE & SMALL SCREEN ADJUSTMENTS === */
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      #usersSection {
+        width: 80%;
+      }
+    }
+
+    @media (max-width: 600px) {
+      header {
+        font-size: 16px;
+        padding: env(safe-area-inset-top, 8px) 10px 8px 10px;
+      }
+      #input, #form button {
+        font-size: 14px;
+        padding: 8px 10px;
+      }
+      #usersSection {
+        width: 100%;
+        left: -100%;
+      }
+      #usersSection.show {
+        left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginOverlay" style="
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
@@ -141,148 +225,163 @@
     align-items: center;
     z-index: 9999;
     flex-direction: column;
-  }
-  #loginOverlay input {
-    padding: 10px 14px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
-    width: 250px;
-  }
-  #loginOverlay button {
-    padding: 10px 20px;
-    border-radius: 8px;
-    border: none;
-    background: #0078d7;
-    color: white;
-    cursor: pointer;
-  }
+  ">
+    <h2 style="color:white; margin-bottom:20px;">👤 Login to Borak Chat</h2>
+    <input type="text" id="loginName" placeholder="Enter your name" style="
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      margin-bottom: 10px;
+    "/>
+    <input type="email" id="loginEmail" placeholder="Enter your email" style="
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      margin-bottom: 15px;
+    "/>
+    <button id="loginBtn" style="
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      background: #0078d7;
+      color: white;
+      cursor: pointer;
+    ">Login</button>
+  </div>
 
-  @media (max-width: 900px) {
-    #usersSection { width: 80%; }
-  }
-</style>
-</head>
-<body>
+  <header>
+    <span id="headerTitle">🚀 Borak Dashboard v4</span>
+    <span id="menuToggle">☰</span>
+  </header>
 
-<div id="loginOverlay">
-  <h2>👤 Login to Borak Chat</h2>
-  <input type="text" id="loginName" placeholder="Enter your name"/>
-  <input type="email" id="loginEmail" placeholder="Enter your email"/>
-  <button id="loginBtn">Login</button>
-</div>
+  <main>
+    <section id="usersSection">
+      <h2>👥 Users</h2>
+      <table id="usersTable">
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Email</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
-<header>
-  <span id="headerTitle">🚀 Borak Dashboard v4</span>
-  <span id="menuToggle">☰</span>
-</header>
+      <form id="addUserForm">
+        <input type="text" id="name" placeholder="Name">
+        <input type="email" id="email" placeholder="Email">
+        <button type="submit" disabled>➕ Add User</button>
+      </form>
+    </section>
 
-<div id="usersSection">
-  <h2>👥 Users</h2>
-  <table id="usersTable">
-    <thead><tr><th>ID</th><th>Name</th><th>Email</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <form id="addUserForm">
-    <input type="text" id="name" placeholder="Name">
-    <input type="email" id="email" placeholder="Email">
-    <button type="submit" disabled>➕ Add User</button>
-  </form>
-</div>
+    <section>
+      <h2>💬 Borak Chat</h2>
+      <div id="messages"></div>
+      <form id="form">
+        <input id="input" autocomplete="off" placeholder="Type a message..." />
+        <button>Send</button>
+      </form>
+    </section>
+  </main>
 
-<div id="messages"></div>
-<form id="form">
-  <input id="input" autocomplete="off" placeholder="Type a message..." />
-  <button>Send</button>
-</form>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const users = [];
+    const usersTableBody = document.querySelector("#usersTable tbody");
+    const addUserForm = document.querySelector("#addUserForm");
+    const addUserButton = addUserForm.querySelector("button");
+    const headerTitle = document.getElementById("headerTitle");
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const socket = io();
-const users = [];
-const usersTableBody = document.querySelector("#usersTable tbody");
-const addUserForm = document.querySelector("#addUserForm");
-const addUserButton = addUserForm.querySelector("button");
-const headerTitle = document.getElementById("headerTitle");
-const loginOverlay = document.getElementById("loginOverlay");
-const loginBtn = document.getElementById("loginBtn");
-const usersSection = document.getElementById("usersSection");
-const messages = document.getElementById("messages");
-const form = document.getElementById("form");
-const input = document.getElementById("input");
-const clientId = Math.random().toString(36).substr(2,9);
-let currentUser = null;
+    function renderUsers() {
+      usersTableBody.innerHTML = "";
+      users.forEach((user, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${index + 1}</td><td>${user.name}</td><td>${user.email}</td>`;
+        usersTableBody.appendChild(row);
+      });
+    }
 
-function renderUsers(){
-  usersTableBody.innerHTML="";
-  users.forEach((u,i)=>{
-    const row=document.createElement("tr");
-    row.innerHTML=`<td>${i+1}</td><td>${u.name}</td><td>${u.email}</td>`;
-    usersTableBody.appendChild(row);
-  });
-}
+    addUserForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.querySelector("#name").value.trim();
+      const email = document.querySelector("#email").value.trim();
+      if (!name || !email) return;
+      users.push({ name, email });
+      addUserForm.reset();
+      renderUsers();
+    });
 
-addUserForm.addEventListener("submit",(e)=>{
-  e.preventDefault();
-  const name=document.querySelector("#name").value.trim();
-  const email=document.querySelector("#email").value.trim();
-  if(!name||!email) return;
-  users.push({name,email});
-  addUserForm.reset();
-  renderUsers();
-});
+    const loginOverlay = document.getElementById("loginOverlay");
+    const loginBtn = document.getElementById("loginBtn");
+    const usersSection = document.getElementById("usersSection");
+    let currentUser = null;
 
-if(localStorage.getItem("borakUser")){
-  currentUser=JSON.parse(localStorage.getItem("borakUser"));
-  loginOverlay.style.display="none";
-  addUserButton.disabled=false;
-  if(!users.find(u=>u.email===currentUser.email)) users.push(currentUser);
-  renderUsers();
-  headerTitle.textContent=`🚀 Borak Dashboard - ${currentUser.name}`;
-}
+    if(localStorage.getItem("borakUser")) {
+      currentUser = JSON.parse(localStorage.getItem("borakUser"));
+      loginOverlay.style.display = "none";
+      addUserButton.disabled = false;
+      if (!users.find(u => u.email === currentUser.email)) users.push(currentUser);
+      renderUsers();
+      headerTitle.textContent = `🚀 Borak Dashboard - ${currentUser.name}`;
+    }
 
-loginBtn.addEventListener("click",()=>{
-  const name=document.getElementById("loginName").value.trim();
-  const email=document.getElementById("loginEmail").value.trim();
-  if(!name||!email) return alert("Enter both name & email");
-  currentUser={name,email};
-  localStorage.setItem("borakUser",JSON.stringify(currentUser));
-  if(!users.find(u=>u.email===email)) users.push(currentUser);
-  renderUsers();
-  loginOverlay.style.display="none";
-  addUserButton.disabled=false;
-  headerTitle.textContent=`🚀 Borak Dashboard - ${currentUser.name}`;
-});
+    loginBtn.addEventListener("click", () => {
+      const name = document.getElementById("loginName").value.trim();
+      const email = document.getElementById("loginEmail").value.trim();
+      if (!name || !email) return alert("Please enter both name and email.");
+      currentUser = { name, email };
+      localStorage.setItem("borakUser", JSON.stringify(currentUser));
+      if (!users.find(u => u.email === email)) users.push(currentUser);
+      renderUsers();
+      loginOverlay.style.display = "none";
+      addUserButton.disabled = false;
+      headerTitle.textContent = `🚀 Borak Dashboard - ${currentUser.name}`;
+    });
 
-document.getElementById("menuToggle").addEventListener("click",()=>{usersSection.classList.toggle("show");});
-document.addEventListener("click",(e)=>{
-  if(!usersSection.contains(e.target)&&!document.getElementById("menuToggle").contains(e.target)){
-    usersSection.classList.remove("show");
-  }
-});
+    /* === MENU SLIDE IN/OUT === */
+    const menuToggle = document.getElementById("menuToggle");
+    menuToggle.addEventListener("click", () => {
+      usersSection.classList.toggle("show");
+    });
 
-function formatTime(date){return new Date(date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
-function addMessage(msg){
-  const div=document.createElement("div");
-  div.classList.add("message",msg.sender===clientId?"sent":"received");
-  div.innerHTML=`${msg.text}<span class="timestamp">${formatTime(msg.time)}</span>`;
-  messages.appendChild(div);
-  const nearBottom=messages.scrollHeight-messages.scrollTop-messages.clientHeight<50;
-  if(nearBottom) messages.scrollTop=messages.scrollHeight;
-}
+    document.addEventListener("click", (e) => {
+      if (!usersSection.contains(e.target) && !menuToggle.contains(e.target)) {
+        usersSection.classList.remove("show");
+      }
+    });
 
-form.addEventListener("submit",(e)=>{
-  e.preventDefault();
-  if(!input.value) return;
-  if(!currentUser) return alert("Login first!");
-  const msg={text:`${currentUser.name}: ${input.value}`, sender:clientId, time:new Date().toISOString()};
-  socket.emit("chat message",msg);
-  input.value="";
-  addMessage(msg);
-});
+    /* === CHAT === */
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+    const clientId = Math.random().toString(36).substr(2, 9);
 
-socket.on("chat message",(msg)=>{if(msg.sender!==clientId) addMessage(msg);});
-</script>
+    function formatTime(date) {
+      return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function addMessage(msgData) {
+      const div = document.createElement('div');
+      div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
+      div.innerHTML = `${msgData.text}<span class="timestamp">${formatTime(msgData.time)}</span>`;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!input.value) return;
+      if (!currentUser) return alert("Please login first!");
+      const msgData = { text: `${currentUser.name}: ${input.value}`, sender: clientId, time: new Date().toISOString() };
+      socket.emit('chat message', msgData);
+      input.value = '';
+      addMessage(msgData);
+    });
+
+    socket.on('chat message', (msgData) => {
+      if (msgData.sender !== clientId) addMessage(msgData);
+    });
+  </script>
 </body>
 </html>
