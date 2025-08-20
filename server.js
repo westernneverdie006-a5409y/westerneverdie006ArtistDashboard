@@ -180,6 +180,7 @@ app.post('/upload-xlsx/:fileId', async (req, res) => {
 // === Serve HTML ===
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 app.get('/borak', (req, res) => res.sendFile(__dirname + '/public/borak.html'));
+app.get('/AdminPanel', (req, res) => res.sendFile(__dirname + '/public/AdminPanel'));
 
 // === SOCKET.IO CHAT ===
 const server = http.createServer(app);
