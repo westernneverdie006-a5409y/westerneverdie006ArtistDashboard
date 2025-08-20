@@ -18,14 +18,16 @@ const auth = new google.auth.GoogleAuth({
 });
 
 // === PostgreSQL Setup ===
+// Use Render's DATABASE_URL if available, fallback to individual vars
 const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || undefined,
   host: process.env.PGHOST,
   port: process.env.PGPORT,
   user: process.env.PGUSER,
   password: process.env.PGPASSWORD,
   database: process.env.PGDATABASE,
   ssl: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false // Required by Render Postgres
   }
 });
 
