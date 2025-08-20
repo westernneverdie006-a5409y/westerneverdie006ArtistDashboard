@@ -163,6 +163,43 @@
   </style>
 </head>
 <body>
+  <div id="loginOverlay" style="
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  flex-direction: column;
+">
+  <h2 style="color:white; margin-bottom:20px;">👤 Login to Borak Chat</h2>
+  <input type="text" id="loginName" placeholder="Enter your name" style="
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    margin-bottom: 10px;
+  "/>
+  <input type="email" id="loginEmail" placeholder="Enter your email" style="
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    margin-bottom: 15px;
+  "/>
+  <button id="loginBtn" style="
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    background: #0078d7;
+    color: white;
+    cursor: pointer;
+  ">Login</button>
+</div>
+
   <header>🚀 Borak Dashboard v4</header>
 
   <main>
@@ -197,70 +234,107 @@
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
 <script>
-  const socket = io();
+const socket = io();
 
-  /* === LOCAL USERS MANAGEMENT === */
-  const users = []; // Local array to store users
-  const usersTableBody = document.querySelector("#usersTable tbody");
-  const addUserForm = document.querySelector("#addUserForm");
+/* === LOCAL USERS MANAGEMENT === */
+const users = [];
+const usersTableBody = document.querySelector("#usersTable tbody");
+const addUserForm = document.querySelector("#addUserForm");
 
-  function renderUsers() {
-    usersTableBody.innerHTML = "";
-    users.forEach((user, index) => {
-      const row = document.createElement("tr");
-      row.innerHTML = `<td>${index + 1}</td><td>${user.name}</td><td>${user.email}</td>`;
-      usersTableBody.appendChild(row);
-    });
-  }
-
-  addUserForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const name = document.querySelector("#name").value.trim();
-    const email = document.querySelector("#email").value.trim();
-    if (!name || !email) return;
-    users.push({ name, email });
-    addUserForm.reset();
-    renderUsers();
+function renderUsers() {
+  usersTableBody.innerHTML = "";
+  users.forEach((user, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${index + 1}</td><td>${user.name}</td><td>${user.email}</td>`;
+    usersTableBody.appendChild(row);
   });
+}
 
-  window.onload = renderUsers;
+addUserForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.querySelector("#name").value.trim();
+  const email = document.querySelector("#email").value.trim();
+  if (!name || !email) return;
+  users.push({ name, email });
+  addUserForm.reset();
+  renderUsers();
+});
 
-  /* === CHAT === */
-  const form = document.getElementById('form');
-  const input = document.getElementById('input');
-  const messages = document.getElementById('messages');
-  const clientId = Math.random().toString(36).substr(2, 9);
+/* === LOGIN SYSTEM === */
+const loginOverlay = document.getElementById("loginOverlay");
+const loginBtn = document.getElementById("loginBtn");
 
-  function formatTime(date) {
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+let currentUser = null;
+
+// If user already in localStorage, auto-login
+if(localStorage.getItem("borakUser")) {
+  currentUser = JSON.parse(localStorage.getItem("borakUser"));
+  loginOverlay.style.display = "none";
+  if (!users.find(u => u.email === currentUser.email)) {
+    users.push(currentUser);
   }
+  renderUsers();
+}
 
-  function addMessage(msgData) {
-    const div = document.createElement('div');
-    div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
-    div.innerHTML = `
-      ${msgData.text}
-      <span class="timestamp">${formatTime(msgData.time)}</span>
-    `;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
+// Login button click
+loginBtn.addEventListener("click", () => {
+  const name = document.getElementById("loginName").value.trim();
+  const email = document.getElementById("loginEmail").value.trim();
+  if (!name || !email) return alert("Please enter both name and email.");
+
+  currentUser = { name, email };
+  localStorage.setItem("borakUser", JSON.stringify(currentUser));
+
+  if (!users.find(u => u.email === email)) {
+    users.push(currentUser);
   }
+  renderUsers();
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!input.value) return;
-    const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
-    socket.emit('chat message', msgData);
-    input.value = '';
-    addMessage(msgData);
-  });
+  loginOverlay.style.display = "none";
+});
 
-  socket.on('chat message', (msgData) => {
-    if (msgData.sender !== clientId) addMessage(msgData);
-  });
+/* === CHAT === */
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const messages = document.getElementById('messages');
+const clientId = Math.random().toString(36).substr(2, 9);
+
+function formatTime(date) {
+  return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function addMessage(msgData) {
+  const div = document.createElement('div');
+  div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
+  div.innerHTML = `
+    ${msgData.text}
+    <span class="timestamp">${formatTime(msgData.time)}</span>
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!input.value) return;
+  if (!currentUser) return alert("Please login first!");
+
+  const msgData = { 
+    text: `${currentUser.name}: ${input.value}`, 
+    sender: clientId, 
+    time: new Date().toISOString() 
+  };
+  socket.emit('chat message', msgData);
+  input.value = '';
+  addMessage(msgData);
+});
+
+socket.on('chat message', (msgData) => {
+  if (msgData.sender !== clientId) addMessage(msgData);
+});
 </script>
+
 
 </body>
 </html>
