@@ -4,18 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel - Fluent Dark</title>
-  <link href="output.css" rel="stylesheet">
+  <!-- ✅ Use Tailwind build from output.css -->
+  <link rel="stylesheet" href="/static/output.css">
 </head>
 <body class="bg-gray-900 text-white flex min-h-screen">
 
   <!-- Sidebar -->
-  <aside class="sidebar w-60">
-    <h2>⚡ Admin Panel</h2>
-    <nav>
-      <a href="#users">👥 Users</a>
-      <a href="#messages">💬 Messages</a>
-      <a href="#">⚙️ Settings</a>
-      <a href="#">📊 Reports</a>
+  <aside class="sidebar w-60 p-4 bg-gray-800">
+    <h2 class="text-xl font-bold mb-6">⚡ Admin Panel</h2>
+    <nav class="flex flex-col gap-3">
+      <a href="#users" class="hover:text-blue-400">👥 Users</a>
+      <a href="#messages" class="hover:text-blue-400">💬 Messages</a>
+      <a href="#settings" class="hover:text-blue-400">⚙️ Settings</a>
+      <a href="#reports" class="hover:text-blue-400">📊 Reports</a>
     </nav>
   </aside>
 
@@ -31,11 +32,11 @@
 
     <main class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Users -->
-      <section class="card" id="users">
+      <section class="card bg-gray-800 p-4 rounded-lg shadow-md" id="users">
         <h2 class="text-lg font-semibold mb-4">👥 Users</h2>
         <div class="overflow-x-auto">
           <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
-            <thead class="table-header">
+            <thead class="bg-gray-700">
               <tr>
                 <th class="p-2 text-left">ID</th>
                 <th class="p-2 text-left">Username</th>
@@ -48,11 +49,11 @@
       </section>
 
       <!-- Messages -->
-      <section class="card" id="messages">
+      <section class="card bg-gray-800 p-4 rounded-lg shadow-md" id="messages">
         <h2 class="text-lg font-semibold mb-4">💬 Messages</h2>
         <div class="overflow-x-auto">
           <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
-            <thead class="table-header">
+            <thead class="bg-gray-700">
               <tr>
                 <th class="p-2 text-left">ID</th>
                 <th class="p-2 text-left">User ID</th>
@@ -71,23 +72,27 @@
     async function loadData() {
       try {
         const users = await (await fetch('/api/users')).json();
-        document.getElementById('usersTable').innerHTML = users.map(u => `
-          <tr class="table-row">
-            <td class="p-2">${u.id}</td>
-            <td class="p-2">${u.username || '-'}</td>
-            <td class="p-2">${u.created_at || '-'}</td>
-          </tr>
-        `).join('');
+        if (Array.isArray(users)) {
+          document.getElementById('usersTable').innerHTML = users.map(u => `
+            <tr class="hover:bg-gray-700">
+              <td class="p-2">${u.id}</td>
+              <td class="p-2">${u.username || '-'}</td>
+              <td class="p-2">${u.created_at || '-'}</td>
+            </tr>
+          `).join('');
+        }
 
         const messages = await (await fetch('/api/messages')).json();
-        document.getElementById('messagesTable').innerHTML = messages.map(m => `
-          <tr class="table-row">
-            <td class="p-2">${m.id}</td>
-            <td class="p-2">${m.user_id || '-'}</td>
-            <td class="p-2">${m.message || '-'}</td>
-            <td class="p-2">${m.created_at || '-'}</td>
-          </tr>
-        `).join('');
+        if (Array.isArray(messages)) {
+          document.getElementById('messagesTable').innerHTML = messages.map(m => `
+            <tr class="hover:bg-gray-700">
+              <td class="p-2">${m.id}</td>
+              <td class="p-2">${m.user_id || '-'}</td>
+              <td class="p-2">${m.message || '-'}</td>
+              <td class="p-2">${m.created_at || '-'}</td>
+            </tr>
+          `).join('');
+        }
       } catch (err) {
         console.error('Error loading data:', err);
       }

@@ -9,7 +9,7 @@ const { Server } = require('socket.io');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static('public'));
+app.use(express.static('public')); // ✅ Make sure output.css is inside /public
 
 // === Google Drive Auth ===
 const auth = new google.auth.GoogleAuth({
@@ -18,7 +18,6 @@ const auth = new google.auth.GoogleAuth({
 });
 
 // === PostgreSQL Setup ===
-// Use Render's DATABASE_URL if available, fallback to individual vars
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || undefined,
   host: process.env.PGHOST,
@@ -39,7 +38,8 @@ async function ensureMessagesTable() {
         id SERIAL PRIMARY KEY,
         text TEXT NOT NULL,
         sender VARCHAR(50) NOT NULL,
-        time TIMESTAMP NOT NULL
+        time TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()  -- ✅ added created_at
       )
     `);
     console.log("✅ messages table is ready!");
@@ -55,7 +55,8 @@ async function ensureUsersTable() {
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL
+        email VARCHAR(100) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()  -- ✅ added created_at
       )
     `);
     console.log("✅ users table is ready!");
@@ -72,10 +73,10 @@ pool.connect()
   })
   .catch(err => console.error("❌ PostgreSQL connection error:", err));
 
-// === Users API (for borak.html) ===
+// === Users API (Unified for both borak.html & AdminPanel.html) ===
 app.get("/api/users", async (req, res) => {
   try {
-    const result = await pool.query("SELECT id, name, email FROM users ORDER BY id ASC");
+    const result = await pool.query("SELECT id, name, email, created_at FROM users ORDER BY id ASC");
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error fetching users:", err);
@@ -87,7 +88,7 @@ app.post("/api/users", async (req, res) => {
   const { name, email } = req.body;
   try {
     const result = await pool.query(
-      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, name, email",
+      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, name, email, created_at",
       [name, email]
     );
     res.json(result.rows[0]);
@@ -178,7 +179,7 @@ io.on('connection', async (socket) => {
   // Send last 50 messages from PostgreSQL
   try {
     const result = await pool.query(
-      'SELECT text, sender, time FROM messages ORDER BY time ASC LIMIT 50'
+      'SELECT text, sender, time, created_at FROM messages ORDER BY time ASC LIMIT 50'
     );
     result.rows.forEach(msg => socket.emit('chat message', msg));
   } catch (err) {
@@ -209,20 +210,7 @@ app.get('/borak', (req, res) => {
   res.sendFile(__dirname + '/public/borak.html');
 });
 
-// ===================== API ROUTES FOR ADMIN PANEL ===================== //
-
-// ✅ Get all users
-app.get("/api/users", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT id, name, email, created_at FROM users ORDER BY id ASC");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ Error fetching users:", err);
-    res.status(500).json({ error: "Failed to fetch users" });
-  }
-});
-
-// ✅ Get all messages
+// === API ROUTES FOR ADMIN PANEL ===
 app.get("/api/messages", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -236,7 +224,6 @@ app.get("/api/messages", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
