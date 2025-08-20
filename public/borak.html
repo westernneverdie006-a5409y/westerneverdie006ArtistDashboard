@@ -304,49 +304,59 @@ form.addEventListener("submit",(e)=>{
 
 socket.on("chat message",(msg)=>{if(msg.sender!==clientId) addMessage(msg);});
 
-/* === Enhanced mobile keyboard handling for dynamic keyboard heights === */
+/* === Corrected mobile keyboard & messages gap handling === */
 function adjustMessagesHeight() {
   const headerHeight = document.querySelector('header').offsetHeight;
   const formHeight = document.querySelector('#form').offsetHeight;
   let viewportHeight = window.innerHeight;
 
-  // Use visualViewport for accurate height when keyboard is open
-  if (window.visualViewport) viewportHeight = window.visualViewport.height;
+  // Use visualViewport if available
+  if (window.visualViewport) {
+    viewportHeight = window.visualViewport.height;
+  }
 
-  messages.style.height = `${viewportHeight - headerHeight - formHeight}px`;
+  // calculate messages height exactly
+  const messagesHeight = viewportHeight - headerHeight - formHeight;
+  messages.style.height = `${messagesHeight > 0 ? messagesHeight : 0}px`;
+
   scrollToBottomSmooth();
 }
 
-window.addEventListener('resize', adjustMessagesHeight);
-window.addEventListener('orientationchange', adjustMessagesHeight);
-window.addEventListener('load', adjustMessagesHeight);
-
-let initialWindowHeight = window.innerHeight;
-
 function updateFormTransform() {
+  let keyboardHeight = 0;
+
   if (window.visualViewport) {
-    const keyboardHeight = window.innerHeight - window.visualViewport.height;
-    form.style.transform = keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : '';
+    keyboardHeight = window.innerHeight - window.visualViewport.height;
+  } else {
+    keyboardHeight = initialWindowHeight - window.innerHeight;
   }
+
+  form.style.transform = keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : '';
   adjustMessagesHeight();
 }
 
+// Track keyboard / viewport changes
 if (window.visualViewport) {
-  // real-time keyboard tracking for iOS/Android
   window.visualViewport.addEventListener('resize', updateFormTransform);
 } else {
-  input.addEventListener('focus', () => {
-    setTimeout(updateFormTransform, 300);
-  });
+  input.addEventListener('focus', () => setTimeout(updateFormTransform, 100));
   input.addEventListener('blur', () => {
     form.style.transform = '';
     adjustMessagesHeight();
   });
 }
 
+// ensure messages are always scrolled to bottom
 function scrollToBottomSmooth(){
-  messages.scrollTo({top: messages.scrollHeight, behavior: 'smooth'});
+  messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
 }
+
+// initialize heights
+let initialWindowHeight = window.innerHeight;
+window.addEventListener('resize', adjustMessagesHeight);
+window.addEventListener('orientationchange', adjustMessagesHeight);
+window.addEventListener('load', adjustMessagesHeight);
+
 
 </script>
 </body>
