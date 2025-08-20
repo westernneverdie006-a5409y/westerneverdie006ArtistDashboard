@@ -52,57 +52,6 @@
       font-weight: 600;
     }
 
-    /* === Users Table === */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: rgba(255,255,255,0.03);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    th, td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    th {
-      background: rgba(255,255,255,0.08);
-      font-weight: 600;
-    }
-
-    /* === Form === */
-    form {
-      margin-top: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    input[type="text"], input[type="email"], #input {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      outline: none;
-    }
-    input::placeholder {
-      color: #bbb;
-    }
-    button {
-      background: #0078d7;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 14px;
-      color: white;
-      font-size: 15px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background: #005ea2;
-    }
-
     /* === Chat Area === */
     #messages {
       flex: 1;
@@ -166,23 +115,6 @@
   <header>🚀 Borak Dashboard v4</header>
 
   <main>
-    <!-- === USERS DASHBOARD === -->
-    <section>
-      <h2>👥 Users</h2>
-      <table id="usersTable">
-        <thead>
-          <tr><th>ID</th><th>Name</th><th>Email</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-
-      <form id="addUserForm">
-        <input type="text" id="name" placeholder="Name" required>
-        <input type="email" id="email" placeholder="Email" required>
-        <button type="submit">➕ Add User</button>
-      </form>
-    </section>
-
     <!-- === CHAT === -->
     <section>
       <h2>💬 Borak Chat</h2>
@@ -197,44 +129,6 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-
-    /* === USERS === */
-    async function loadUsers() {
-      try {
-        const res = await fetch("/api/users");
-        const users = await res.json();
-        const tbody = document.querySelector("#usersTable tbody");
-        tbody.innerHTML = "";
-        users.forEach(user => {
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${user.id}</td><td>${user.name}</td><td>${user.email}</td>`;
-          tbody.appendChild(row);
-        });
-      } catch (err) {
-        console.error("Error loading users:", err);
-      }
-    }
-    document.querySelector("#addUserForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.querySelector("#name").value;
-      const email = document.querySelector("#email").value;
-      try {
-        const res = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email })
-        });
-        if (res.ok) {
-          document.querySelector("#addUserForm").reset();
-          loadUsers();
-        } else {
-          alert("❌ Error adding user");
-        }
-      } catch (err) {
-        console.error("Error adding user:", err);
-      }
-    });
-    window.onload = loadUsers;
 
     /* === CHAT === */
     const form = document.getElementById('form');
