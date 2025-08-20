@@ -211,25 +211,29 @@ app.get('/borak', (req, res) => {
 
 // ===================== API ROUTES FOR ADMIN PANEL ===================== //
 
-// Get all users
-app.get('/api/users', async (req, res) => {
+// ✅ Get all users
+app.get("/api/users", async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM users ORDER BY id DESC');
+    const result = await pool.query("SELECT id, name, email, created_at FROM users ORDER BY id ASC");
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching users:', err);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    console.error("❌ Error fetching users:", err);
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
-// Get all messages
-app.get('/api/messages', async (req, res) => {
+// ✅ Get all messages
+app.get("/api/messages", async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM messages ORDER BY id DESC');
+    const result = await pool.query(`
+      SELECT id, sender, text, time, created_at
+      FROM messages
+      ORDER BY id ASC
+    `);
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching messages:', err);
-    res.status(500).json({ error: 'Failed to fetch messages' });
+    console.error("❌ Error fetching messages:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
 

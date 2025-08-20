@@ -7,9 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
-    .card { @apply bg-gray-800 text-gray-100 shadow-xl rounded-xl p-6; }
-    .table-header { @apply bg-gray-700 text-gray-200; }
-    .table-row { @apply hover:bg-gray-700 transition; }
   </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
@@ -19,10 +16,10 @@
 
   <main class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Users -->
-    <section class="card">
+    <section class="bg-gray-800 text-gray-100 shadow-xl rounded-xl p-6">
       <h2 class="text-xl font-semibold mb-4">👥 Users</h2>
       <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
-        <thead class="table-header">
+        <thead class="bg-gray-700 text-gray-200">
           <tr>
             <th class="p-2">ID</th>
             <th class="p-2">Username</th>
@@ -34,10 +31,10 @@
     </section>
 
     <!-- Messages -->
-    <section class="card">
+    <section class="bg-gray-800 text-gray-100 shadow-xl rounded-xl p-6">
       <h2 class="text-xl font-semibold mb-4">💬 Messages</h2>
       <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
-        <thead class="table-header">
+        <thead class="bg-gray-700 text-gray-200">
           <tr>
             <th class="p-2">ID</th>
             <th class="p-2">User ID</th>
@@ -57,7 +54,7 @@
         const usersRes = await fetch('/api/users');
         const users = await usersRes.json();
         document.getElementById('usersTable').innerHTML = users.map(u => `
-          <tr class="table-row">
+          <tr class="hover:bg-gray-700 transition">
             <td class="p-2">${u.id}</td>
             <td class="p-2">${u.username || '-'}</td>
             <td class="p-2">${u.created_at || '-'}</td>
@@ -68,7 +65,7 @@
         const msgRes = await fetch('/api/messages');
         const messages = await msgRes.json();
         document.getElementById('messagesTable').innerHTML = messages.map(m => `
-          <tr class="table-row">
+          <tr class="hover:bg-gray-700 transition">
             <td class="p-2">${m.id}</td>
             <td class="p-2">${m.user_id}</td>
             <td class="p-2">${m.message}</td>
