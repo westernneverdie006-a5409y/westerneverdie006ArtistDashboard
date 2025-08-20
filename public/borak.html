@@ -314,6 +314,25 @@ function adjustMessagesHeight() {
 window.addEventListener('resize', adjustMessagesHeight);
 window.addEventListener('orientationchange', adjustMessagesHeight);
 window.addEventListener('load', adjustMessagesHeight);
+
+/* Keep input above keyboard on mobile (iOS/Android) */
+let originalBottom = 0;
+input.addEventListener('focus', ()=>{
+  // save original scroll
+  originalBottom = window.innerHeight;
+  setTimeout(()=>{
+    const keyboardHeight = originalBottom - window.innerHeight;
+    if(keyboardHeight>0){
+      form.style.transform = `translateY(-${keyboardHeight}px)`;
+      messages.style.height = `${window.innerHeight - document.querySelector('header').offsetHeight - form.offsetHeight}px`;
+      messages.scrollTop = messages.scrollHeight;
+    }
+  }, 300);
+});
+input.addEventListener('blur', ()=>{
+  form.style.transform = '';
+  adjustMessagesHeight();
+});
 </script>
 </body>
 </html>
