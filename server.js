@@ -9,9 +9,7 @@ const { Server } = require('socket.io');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-
-// Serve static files from /public as /static
-app.use('/static', express.static('public'));
+app.use(express.static('public'));
 
 // === Google Drive Auth ===
 const auth = new google.auth.GoogleAuth({
@@ -20,6 +18,7 @@ const auth = new google.auth.GoogleAuth({
 });
 
 // === PostgreSQL Setup ===
+// Use Render's DATABASE_URL if available, fallback to individual vars
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || undefined,
   host: process.env.PGHOST,
@@ -27,10 +26,12 @@ const pool = new Pool({
   user: process.env.PGUSER,
   password: process.env.PGPASSWORD,
   database: process.env.PGDATABASE,
-  ssl: { rejectUnauthorized: false } // Render Postgres requires this
+  ssl: {
+    rejectUnauthorized: false // Required by Render Postgres
+  }
 });
 
-// === Ensure Tables Exist ===
+// Ensure messages table exists
 async function ensureMessagesTable() {
   try {
     await pool.query(`
@@ -38,8 +39,7 @@ async function ensureMessagesTable() {
         id SERIAL PRIMARY KEY,
         text TEXT NOT NULL,
         sender VARCHAR(50) NOT NULL,
-        time TIMESTAMP NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
+        time TIMESTAMP NOT NULL
       )
     `);
     console.log("✅ messages table is ready!");
@@ -48,14 +48,14 @@ async function ensureMessagesTable() {
   }
 }
 
+// Ensure users table exists
 async function ensureUsersTable() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
+        email VARCHAR(100) UNIQUE NOT NULL
       )
     `);
     console.log("✅ users table is ready!");
@@ -72,16 +72,14 @@ pool.connect()
   })
   .catch(err => console.error("❌ PostgreSQL connection error:", err));
 
-// === Users API ===
+// === Users API (for borak.html) ===
 app.get("/api/users", async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT id, name AS username, created_at FROM users ORDER BY id ASC"
-    );
+    const result = await pool.query("SELECT id, name, email FROM users ORDER BY id ASC");
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error fetching users:", err);
-    res.status(500).json({ error: "Failed to fetch users" });
+    res.status(500).json({ error: "Database error" });
   }
 });
 
@@ -89,7 +87,7 @@ app.post("/api/users", async (req, res) => {
   const { name, email } = req.body;
   try {
     const result = await pool.query(
-      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, name, email, created_at",
+      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, name, email",
       [name, email]
     );
     res.json(result.rows[0]);
@@ -99,22 +97,7 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-// === Messages API ===
-app.get("/api/messages", async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, sender AS user_id, text AS message, time AS created_at
-      FROM messages
-      ORDER BY id ASC
-    `);
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ Error fetching messages:", err);
-    res.status(500).json({ error: "Failed to fetch messages" });
-  }
-});
-
-// === Google Drive XLSX APIs ===
+// === List Files in Google Drive Folder ===
 app.get('/list-files', async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
@@ -129,6 +112,7 @@ app.get('/list-files', async (req, res) => {
   }
 });
 
+// === Load XLSX as FULL MATRIX ===
 app.get('/xlsx-to-json/:fileId', async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
@@ -147,13 +131,16 @@ app.get('/xlsx-to-json/:fileId', async (req, res) => {
   }
 });
 
+// === Upload Edited JSON as XLSX ===
 app.post('/upload-xlsx/:fileId', async (req, res) => {
   try {
     const matrix = req.body.data;
     const filteredData = matrix.filter(row => {
       for (let col = 0; col <= 5; col++) {
         const cell = row[col];
-        if (cell !== undefined && cell !== null && String(cell).trim() !== '') return true;
+        if (cell !== undefined && cell !== null && String(cell).trim() !== '') {
+          return true;
+        }
       }
       return false;
     });
@@ -161,7 +148,6 @@ app.post('/upload-xlsx/:fileId', async (req, res) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
     await drive.files.update({
       fileId: req.params.fileId,
@@ -177,24 +163,22 @@ app.post('/upload-xlsx/:fileId', async (req, res) => {
   }
 });
 
-// === Serve HTML ===
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-app.get('/borak', (req, res) => res.sendFile(__dirname + '/public/borak.html'));
-app.get('/AdminPanel.html', (req, res) => {
-  res.sendFile(__dirname + '/public/AdminPanel.html');
+// === Serve index.html ===
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
 });
 
-
-// === SOCKET.IO CHAT ===
+// === SOCKET.IO CHAT SETUP ===
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
 
+  // Send last 50 messages from PostgreSQL
   try {
     const result = await pool.query(
-      'SELECT text, sender, time, created_at FROM messages ORDER BY time ASC LIMIT 50'
+      'SELECT text, sender, time FROM messages ORDER BY time ASC LIMIT 50'
     );
     result.rows.forEach(msg => socket.emit('chat message', msg));
   } catch (err) {
@@ -203,6 +187,8 @@ io.on('connection', async (socket) => {
 
   socket.on('chat message', async (msg) => {
     io.emit('chat message', msg);
+
+    // Save message to PostgreSQL
     try {
       await pool.query(
         'INSERT INTO messages (text, sender, time) VALUES ($1, $2, $3)',
@@ -213,8 +199,46 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('disconnect', () => console.log('🔴 A user disconnected:', socket.id));
+  socket.on('disconnect', () => {
+    console.log('🔴 A user disconnected:', socket.id);
+  });
 });
 
+// === Serve borak.html ===
+app.get('/borak', (req, res) => {
+  res.sendFile(__dirname + '/public/borak.html');
+});
+
+// ===================== API ROUTES FOR ADMIN PANEL ===================== //
+
+// ✅ Get all users
+app.get("/api/users", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, name, email, created_at FROM users ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error fetching users:", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// ✅ Get all messages
+app.get("/api/messages", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, sender, text, time, created_at
+      FROM messages
+      ORDER BY id ASC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error fetching messages:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});

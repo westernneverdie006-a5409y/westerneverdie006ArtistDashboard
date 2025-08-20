@@ -1,27 +1,16 @@
 {
-  "name": "borak-app",
+  "name": "westerneverdie006-artist-dashboard-render",
   "version": "1.0.0",
-  "description": "Borak App with TailwindCSS + Express",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
-    "build:css": "tailwindcss -i ./src/input.css -o ./public/output.css --minify",
-    "build": "npm run build:css && node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "mongoose": "^8.6.0",
+    "express": "^4.18.2",
+    "googleapis": "^133.0.0",
     "cors": "^2.8.5",
-    "googleapis": "^144.0.0",
     "xlsx": "^0.18.5",
-    "pg": "^8.11.5",
-    "socket.io": "^4.7.5"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.4.13",
-    "postcss": "^8.4.31",
-    "autoprefixer": "^10.4.19",
-    "nodemon": "^3.1.0"
+    "socket.io": "^4.7.2",
+    "pg": "^8.12.0"
   }
 }
