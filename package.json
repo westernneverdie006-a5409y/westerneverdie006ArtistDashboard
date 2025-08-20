@@ -12,7 +12,8 @@
   "dependencies": {
     "express": "^4.19.2",
     "mongoose": "^8.6.0",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "googleapis": "^144.0.0"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.13",
