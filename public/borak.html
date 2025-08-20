@@ -304,11 +304,16 @@ form.addEventListener("submit",(e)=>{
 
 socket.on("chat message",(msg)=>{if(msg.sender!==clientId) addMessage(msg);});
 
-/* === Responsive height & mobile keyboard handling with sticky input === */
+/* === Responsive height & mobile keyboard handling with sticky input & correct messages gap === */
 function adjustMessagesHeight() {
   const headerHeight = document.querySelector('header').offsetHeight;
   const formHeight = document.querySelector('#form').offsetHeight;
-  messages.style.height = `${window.innerHeight - headerHeight - formHeight}px`;
+  let viewportHeight = window.innerHeight;
+
+  // Use visualViewport if available for more accurate height when keyboard is open
+  if (window.visualViewport) viewportHeight = window.visualViewport.height;
+
+  messages.style.height = `${viewportHeight - headerHeight - formHeight}px`;
   scrollToBottomSmooth();
 }
 window.addEventListener('resize', adjustMessagesHeight);
@@ -317,7 +322,6 @@ window.addEventListener('load', adjustMessagesHeight);
 
 let initialWindowHeight = window.innerHeight;
 
-// Use VisualViewport if available for real-time keyboard tracking
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     const keyboardHeight = window.innerHeight - window.visualViewport.height;
@@ -325,7 +329,6 @@ if (window.visualViewport) {
     adjustMessagesHeight();
   });
 } else {
-  // fallback for browsers without VisualViewport
   input.addEventListener('focus', () => {
     setTimeout(() => {
       const keyboardHeight = initialWindowHeight - window.innerHeight;
@@ -340,8 +343,10 @@ if (window.visualViewport) {
 }
 
 function scrollToBottomSmooth(){
+  // always scroll messages to the bottom of visible area, right above input bar
   messages.scrollTo({top: messages.scrollHeight, behavior: 'smooth'});
 }
+
 </script>
 </body>
 </html>
