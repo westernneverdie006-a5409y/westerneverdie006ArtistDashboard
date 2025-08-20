@@ -1,102 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Fluent UI + Tailwind -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - Fluent Dark</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/feather-icons"></script>
   <style>
-    body {
-      background-color: #1b1b1b;
-      color: #f0f0f0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .sidebar {
-      background-color: #2b2b2b;
-      border-right: 1px solid #3a3a3a;
-    }
-    .card {
-      background-color: #252525;
-      border-radius: 0.75rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
-      padding: 1rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #3a3a3a;
-    }
-    th {
-      text-align: left;
-      color: #bbbbbb;
-    }
-    tr:hover {
-      background-color: #333333;
-    }
+    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .card { @apply bg-gray-800 text-gray-100 shadow-xl rounded-xl p-6; }
+    .table-header { @apply bg-gray-700 text-gray-200; }
+    .table-row { @apply hover:bg-gray-700 transition; }
   </style>
 </head>
-<body class="flex h-screen">
-  <!-- Sidebar -->
-  <div class="sidebar w-64 p-4 flex flex-col">
-    <h1 class="text-xl font-bold mb-6">⚡ Admin Panel</h1>
-    <button id="usersBtn" class="flex items-center p-2 mb-2 rounded hover:bg-gray-700">
-      <i data-feather="users" class="mr-2"></i> Users
-    </button>
-    <button id="messagesBtn" class="flex items-center p-2 rounded hover:bg-gray-700">
-      <i data-feather="message-circle" class="mr-2"></i> Messages
-    </button>
-  </div>
+<body class="bg-gray-900 text-white min-h-screen">
+  <header class="p-6 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
+    <h1 class="text-2xl font-bold">📊 Admin Dashboard</h1>
+  </header>
 
-  <!-- Main Content -->
-  <div class="flex-1 p-6 overflow-y-auto">
-    <div id="content" class="card">
-      <h2 class="text-lg font-semibold mb-4">Welcome 👋</h2>
-      <p>Select an option from the sidebar.</p>
-    </div>
-  </div>
+  <main class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Users -->
+    <section class="card">
+      <h2 class="text-xl font-semibold mb-4">👥 Users</h2>
+      <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
+        <thead class="table-header">
+          <tr>
+            <th class="p-2">ID</th>
+            <th class="p-2">Username</th>
+            <th class="p-2">Created At</th>
+          </tr>
+        </thead>
+        <tbody id="usersTable"></tbody>
+      </table>
+    </section>
+
+    <!-- Messages -->
+    <section class="card">
+      <h2 class="text-xl font-semibold mb-4">💬 Messages</h2>
+      <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
+        <thead class="table-header">
+          <tr>
+            <th class="p-2">ID</th>
+            <th class="p-2">User ID</th>
+            <th class="p-2">Message</th>
+            <th class="p-2">Created At</th>
+          </tr>
+        </thead>
+        <tbody id="messagesTable"></tbody>
+      </table>
+    </section>
+  </main>
 
   <script>
-    feather.replace();
+    async function loadData() {
+      try {
+        // Fetch users
+        const usersRes = await fetch('/api/users');
+        const users = await usersRes.json();
+        document.getElementById('usersTable').innerHTML = users.map(u => `
+          <tr class="table-row">
+            <td class="p-2">${u.id}</td>
+            <td class="p-2">${u.username || '-'}</td>
+            <td class="p-2">${u.created_at || '-'}</td>
+          </tr>
+        `).join('');
 
-    async function loadData(type) {
-      let url = type === 'users' ? '/api/users' : '/api/messages';
-      const res = await fetch(url);
-      const data = await res.json();
-
-      let html = `<h2 class="text-lg font-semibold mb-4">${type.charAt(0).toUpperCase() + type.slice(1)}</h2>`;
-      html += '<div class="overflow-x-auto"><table><thead><tr>';
-
-      // Build table headers
-      if (data.length > 0) {
-        Object.keys(data[0]).forEach(key => {
-          html += `<th>${key}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-
-        // Build table rows
-        data.forEach(row => {
-          html += '<tr>';
-          Object.values(row).forEach(val => {
-            html += `<td>${val}</td>`;
-          });
-          html += '</tr>';
-        });
-        html += '</tbody></table></div>';
-      } else {
-        html += '<p>No data found.</p>';
+        // Fetch messages
+        const msgRes = await fetch('/api/messages');
+        const messages = await msgRes.json();
+        document.getElementById('messagesTable').innerHTML = messages.map(m => `
+          <tr class="table-row">
+            <td class="p-2">${m.id}</td>
+            <td class="p-2">${m.user_id}</td>
+            <td class="p-2">${m.message}</td>
+            <td class="p-2">${m.created_at}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading data:', err);
       }
-
-      document.getElementById('content').innerHTML = html;
     }
 
-    document.getElementById('usersBtn').addEventListener('click', () => loadData('users'));
-    document.getElementById('messagesBtn').addEventListener('click', () => loadData('messages'));
+    loadData();
   </script>
 </body>
 </html>
