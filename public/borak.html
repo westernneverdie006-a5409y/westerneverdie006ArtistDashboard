@@ -61,6 +61,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      height: 100%; /* Maintain height */
     }
 
     #usersSection {
@@ -141,6 +142,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      scroll-behavior: smooth; /* Smooth scrolling */
     }
     .message {
       padding: 10px 14px;
@@ -322,7 +324,6 @@
       headerTitle.textContent = `🚀 Borak Dashboard - ${currentUser.name}`;
     });
 
-    /* === MENU SLIDE IN/OUT === */
     const menuToggle = document.getElementById("menuToggle");
     menuToggle.addEventListener("click", () => {
       usersSection.classList.toggle("show");
@@ -334,7 +335,6 @@
       }
     });
 
-    /* === CHAT === */
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
@@ -349,7 +349,10 @@
       div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
       div.innerHTML = `${msgData.text}<span class="timestamp">${formatTime(msgData.time)}</span>`;
       messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
+
+      // Auto-scroll if near bottom
+      const isNearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 50;
+      if (isNearBottom) messages.scrollTop = messages.scrollHeight;
     }
 
     form.addEventListener('submit', (e) => {
