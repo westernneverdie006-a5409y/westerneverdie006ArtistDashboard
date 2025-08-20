@@ -4,55 +4,81 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel - Fluent Dark</title>
-  <link href="output.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+    .card { @apply bg-gray-800 text-gray-100 shadow-xl rounded-xl p-6 border border-gray-700; }
+    .table-header { @apply bg-gray-700 text-gray-200 text-sm; }
+    .table-row { @apply hover:bg-gray-700 transition text-sm; }
+    .sidebar { @apply bg-gray-850 border-r border-gray-700 min-h-screen p-4; }
+    .sidebar a { @apply block py-2 px-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition; }
+    .sidebar h2 { @apply text-lg font-bold text-gray-200 mb-3; }
+  </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-  <!-- Header -->
-  <header class="p-6 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
-    <h1 class="text-2xl font-bold">📊 Admin Dashboard</h1>
-    <button id="themeToggle" class="bg-gray-700 px-3 py-1 rounded hover:bg-gray-600 transition">
-      🌙 Toggle Theme
-    </button>
-  </header>
+<body class="bg-gray-900 text-white flex min-h-screen">
 
-  <!-- Main -->
-  <main class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Users -->
-    <section class="card">
-      <h2 class="text-xl font-semibold mb-4">👥 Users</h2>
-      <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
-        <thead class="table-header">
-          <tr>
-            <th class="p-2">ID</th>
-            <th class="p-2">Username</th>
-            <th class="p-2">Created At</th>
-          </tr>
-        </thead>
-        <tbody id="usersTable"></tbody>
-      </table>
-    </section>
+  <!-- Sidebar -->
+  <aside class="sidebar w-60">
+    <h2>⚡ Admin Panel</h2>
+    <nav>
+      <a href="#users">👥 Users</a>
+      <a href="#messages">💬 Messages</a>
+      <a href="#">⚙️ Settings</a>
+      <a href="#">📊 Reports</a>
+    </nav>
+  </aside>
 
-    <!-- Messages -->
-    <section class="card">
-      <h2 class="text-xl font-semibold mb-4">💬 Messages</h2>
-      <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
-        <thead class="table-header">
-          <tr>
-            <th class="p-2">ID</th>
-            <th class="p-2">User ID</th>
-            <th class="p-2">Message</th>
-            <th class="p-2">Created At</th>
-          </tr>
-        </thead>
-        <tbody id="messagesTable"></tbody>
-      </table>
-    </section>
-  </main>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col">
+    <header class="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
+      <h1 class="text-xl font-bold">📊 Dashboard</h1>
+      <button class="bg-gray-700 px-3 py-1 rounded-lg text-sm hover:bg-gray-600">Logout</button>
+    </header>
+
+    <main class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Users -->
+      <section class="card" id="users">
+        <h2 class="text-lg font-semibold mb-4">👥 Users</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
+            <thead class="table-header">
+              <tr>
+                <th class="p-2 text-left">ID</th>
+                <th class="p-2 text-left">Username</th>
+                <th class="p-2 text-left">Created At</th>
+              </tr>
+            </thead>
+            <tbody id="usersTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Messages -->
+      <section class="card" id="messages">
+        <h2 class="text-lg font-semibold mb-4">💬 Messages</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full border border-gray-700 rounded-lg overflow-hidden">
+            <thead class="table-header">
+              <tr>
+                <th class="p-2 text-left">ID</th>
+                <th class="p-2 text-left">User ID</th>
+                <th class="p-2 text-left">Message</th>
+                <th class="p-2 text-left">Created At</th>
+              </tr>
+            </thead>
+            <tbody id="messagesTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script>
     async function loadData() {
       try {
-        const users = await (await fetch('/api/users')).json();
+        // Fetch users
+        const usersRes = await fetch('/api/users');
+        const users = await usersRes.json();
         document.getElementById('usersTable').innerHTML = users.map(u => `
           <tr class="table-row">
             <td class="p-2">${u.id}</td>
@@ -61,7 +87,9 @@
           </tr>
         `).join('');
 
-        const messages = await (await fetch('/api/messages')).json();
+        // Fetch messages
+        const msgRes = await fetch('/api/messages');
+        const messages = await msgRes.json();
         document.getElementById('messagesTable').innerHTML = messages.map(m => `
           <tr class="table-row">
             <td class="p-2">${m.id}</td>
@@ -71,15 +99,11 @@
           </tr>
         `).join('');
       } catch (err) {
-        console.error("Error loading data:", err);
+        console.error('Errdor loading data:', err);
       }
     }
-    loadData();
 
-    // Toggle Dark/Light
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      document.documentElement.classList.toggle('dark');
-    });
+    loadData();
   </script>
 </body>
 </html>
