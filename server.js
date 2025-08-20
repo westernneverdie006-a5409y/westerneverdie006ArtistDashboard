@@ -3,8 +3,8 @@ const cors = require('cors');
 const { google } = require('googleapis');
 const XLSX = require('xlsx');
 const http = require('http');
+const { Pool } = require('pg');
 const { Server } = require('socket.io');
-const { MongoClient, ServerApiVersion } = require('mongodb'); // Added MongoDB
 
 const app = express();
 app.use(cors());
@@ -17,29 +17,43 @@ const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/drive'],
 });
 
-// === MongoDB Setup ===
-const mongoUri = process.env.MONGO_URI || "mongodb+srv://BorakApp:Cassey5409@westernneverdie006datab.saly3qq.mongodb.net/?retryWrites=true&w=majority";
-
-const mongoClient = new MongoClient(mongoUri, {
-  serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
+// === PostgreSQL Setup ===
+const pool = new Pool({
+  host: process.env.PGHOST,
+  port: process.env.PGPORT,
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-let chatCollection;
-async function connectMongo() {
+// Ensure messages table exists
+async function ensureMessagesTable() {
   try {
-    await mongoClient.connect();
-    const db = mongoClient.db("BorakChatDB");
-    chatCollection = db.collection("messages");
-    // Optional: create index on time for faster queries
-    await chatCollection.createIndex({ time: 1 });
-    console.log("✅ Connected to MongoDB!");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        text TEXT NOT NULL,
+        sender VARCHAR(50) NOT NULL,
+        time TIMESTAMP NOT NULL
+      )
+    `);
+    console.log("✅ messages table is ready!");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("❌ Failed to create messages table:", err);
   }
 }
-connectMongo().catch(console.error);
 
-// === List Files in Folder ===
+pool.connect()
+  .then(() => {
+    console.log("✅ Connected to PostgreSQL!");
+    ensureMessagesTable();
+  })
+  .catch(err => console.error("❌ PostgreSQL connection error:", err));
+
+// === List Files in Google Drive Folder ===
 app.get('/list-files', async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: await auth.getClient() });
@@ -105,6 +119,7 @@ app.post('/upload-xlsx/:fileId', async (req, res) => {
   }
 });
 
+// === Serve index.html ===
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
@@ -116,31 +131,27 @@ const io = new Server(server, { cors: { origin: "*" } });
 io.on('connection', async (socket) => {
   console.log('🟢 A user connected:', socket.id);
 
-  // Send last 50 messages from MongoDB to client
-  if (chatCollection) {
-    try {
-      const recentMessages = await chatCollection.find().sort({ time: 1 }).limit(50).toArray();
-      recentMessages.forEach(msg => socket.emit('chat message', msg));
-    } catch (err) {
-      console.error('Failed to fetch recent messages:', err);
-    }
+  // Send last 50 messages from PostgreSQL
+  try {
+    const result = await pool.query(
+      'SELECT text, sender, time FROM messages ORDER BY time ASC LIMIT 50'
+    );
+    result.rows.forEach(msg => socket.emit('chat message', msg));
+  } catch (err) {
+    console.error('Failed to fetch messages:', err);
   }
 
   socket.on('chat message', async (msg) => {
-    console.log('💬 Message:', msg);
-    io.emit('chat message', msg); // broadcast to all clients
+    io.emit('chat message', msg);
 
-    // Save message to MongoDB
-    if (chatCollection) {
-      try {
-        await chatCollection.insertOne({
-          text: msg.text,
-          sender: msg.sender,
-          time: new Date(msg.time)
-        });
-      } catch (err) {
-        console.error('Failed to save message:', err);
-      }
+    // Save message to PostgreSQL
+    try {
+      await pool.query(
+        'INSERT INTO messages (text, sender, time) VALUES ($1, $2, $3)',
+        [msg.text, msg.sender, msg.time]
+      );
+    } catch (err) {
+      console.error('Failed to save message:', err);
     }
   });
 

@@ -5,7 +5,6 @@
   <title>Borak v2 Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <style>
-    /* Base styles */
     html, body {
       margin: 0;
       padding: 0;
@@ -17,7 +16,6 @@
       flex-direction: column;
     }
 
-    /* Chat container */
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -27,7 +25,6 @@
       gap: 6px;
     }
 
-    /* Message bubbles */
     .message {
       display: flex;
       align-items: flex-end;
@@ -56,7 +53,6 @@
       justify-content: flex-start;
     }
 
-    /* Timestamp */
     .timestamp {
       font-size: 10px;
       color: #aaa;
@@ -65,7 +61,6 @@
       align-self: flex-end;
     }
 
-    /* Avatar dot */
     .avatar {
       width: 10px;
       height: 10px;
@@ -77,14 +72,9 @@
       align-self: center;
     }
 
-    .sent .avatar {
-      background-color: #fff;
-    }
-    .received .avatar {
-      background-color: #bbb;
-    }
+    .sent .avatar { background-color: #fff; }
+    .received .avatar { background-color: #bbb; }
 
-    /* Input form */
     #form {
       display: flex;
       padding: 10px;
@@ -103,9 +93,7 @@
       color: white;
     }
 
-    #input::placeholder {
-      color: #bbb;
-    }
+    #input::placeholder { color: #bbb; }
 
     button {
       margin-left: 10px;
@@ -119,30 +107,17 @@
       transition: background 0.2s;
     }
 
-    button:hover {
-      background: #005ea2;
-    }
+    button:hover { background: #005ea2; }
 
-    /* Scrollbar customization */
-    #messages::-webkit-scrollbar {
-      width: 8px;
-    }
+    #messages::-webkit-scrollbar { width: 8px; }
     #messages::-webkit-scrollbar-thumb {
       background: #555;
       border-radius: 4px;
     }
 
-    /* Responsive */
     @media (max-width: 600px) {
-      .message {
-        font-size: 14px;
-        max-width: 85%;
-      }
-
-      #input, button {
-        font-size: 14px;
-        padding: 10px 12px;
-      }
+      .message { font-size: 14px; max-width: 85%; }
+      #input, button { font-size: 14px; padding: 10px 12px; }
     }
   </style>
 </head>
@@ -160,23 +135,13 @@
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
-    // Generate random client ID for distinguishing sent/received
     const clientId = Math.random().toString(36).substr(2, 9);
 
     function formatTime(date) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (input.value) {
-        const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
-        socket.emit('chat message', msgData);
-        input.value = '';
-      }
-    });
-
-    socket.on('chat message', (msgData) => {
+    function addMessage(msgData) {
       const li = document.createElement('li');
       li.classList.add('message');
       li.classList.add(msgData.sender === clientId ? 'sent' : 'received');
@@ -189,7 +154,7 @@
 
       const timestamp = document.createElement('span');
       timestamp.classList.add('timestamp');
-      timestamp.textContent = formatTime(new Date(msgData.time));
+      timestamp.textContent = formatTime(msgData.time);
 
       li.appendChild(msgData.sender === clientId ? timestamp : avatar);
       li.appendChild(text);
@@ -197,6 +162,20 @@
 
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!input.value) return;
+      const msgData = { text: input.value, sender: clientId, time: new Date().toISOString() };
+      socket.emit('chat message', msgData);
+      input.value = '';
+      addMessage(msgData);
+    });
+
+    socket.on('chat message', (msgData) => {
+      // Prevent duplicate for own messages
+      if (msgData.sender !== clientId) addMessage(msgData);
     });
   </script>
 </body>
