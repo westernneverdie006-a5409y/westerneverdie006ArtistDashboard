@@ -195,7 +195,7 @@
 </div>
 
 <header>
-  <span id="headerTitle">🚀 Borak Dashboard v4</span>
+  <span id="headerTitle"></span>
   <span id="menuToggle">☰</span>
 </header>
 
@@ -289,7 +289,7 @@ function addMessage(msg){
   div.classList.add("message",msg.sender===clientId?"sent":"received");
   div.innerHTML=`${msg.text}<span class="timestamp">${formatTime(msg.time)}</span>`;
   messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottomSmooth();
 }
 
 form.addEventListener("submit",(e)=>{
@@ -314,7 +314,7 @@ window.addEventListener('resize', adjustMessagesHeight);
 window.addEventListener('orientationchange', adjustMessagesHeight);
 window.addEventListener('load', adjustMessagesHeight);
 
-/* Mobile keyboard input adjustment */
+/* Mobile keyboard input adjustment with smooth scroll for new messages */
 let initialWindowHeight = window.innerHeight;
 input.addEventListener('focus', ()=>{
   setTimeout(()=>{
@@ -322,7 +322,7 @@ input.addEventListener('focus', ()=>{
     if(keyboardHeight>0){
       form.style.transform = `translateY(-${keyboardHeight}px)`;
       adjustMessagesHeight();
-      messages.scrollTop = messages.scrollHeight;
+      scrollToBottomSmooth();
     }
   }, 300);
 });
@@ -330,6 +330,10 @@ input.addEventListener('blur', ()=>{
   form.style.transform = '';
   adjustMessagesHeight();
 });
+
+function scrollToBottomSmooth(){
+  messages.scrollTo({top: messages.scrollHeight, behavior: 'smooth'});
+}
 </script>
 </body>
 </html>
