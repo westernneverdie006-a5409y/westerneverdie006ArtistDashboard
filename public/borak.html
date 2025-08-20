@@ -5,7 +5,6 @@
   <title>Borak Dashboard v4</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    /* === Windows 11 Fluent Theme === */
     body {
       margin: 0;
       padding: 0;
@@ -47,6 +46,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 20px;
       padding: 20px;
+      position: relative;
     }
 
     section {
@@ -58,11 +58,19 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition: transform 0.3s ease;
     }
 
-    section.hidden {
-      transform: translateX(-110%);
+    #usersSection {
+      position: absolute;
+      top: 0;
+      left: -350px; /* Hidden offscreen initially */
+      width: 300px;
+      height: 100%;
+      z-index: 10;
+      transition: left 0.3s ease;
+    }
+    #usersSection.show {
+      left: 0; /* Slide in */
     }
 
     h2 {
@@ -71,7 +79,6 @@
       font-weight: 600;
     }
 
-    /* === Users Table === */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -89,7 +96,6 @@
       font-weight: 600;
     }
 
-    /* === Form === */
     form {
       margin-top: 15px;
       display: flex;
@@ -122,7 +128,6 @@
       background: #005ea2;
     }
 
-    /* === Chat Area === */
     #messages {
       flex: 1;
       overflow-y: auto;
@@ -173,15 +178,6 @@
       background: #555;
       border-radius: 4px;
     }
-
-    @media (max-width: 900px) {
-      main {
-        grid-template-columns: 1fr;
-      }
-      section.hidden {
-        transform: translateX(0);
-      }
-    }
   </style>
 </head>
 <body>
@@ -228,16 +224,13 @@
   </header>
 
   <main>
-    <!-- === USERS DASHBOARD === -->
-    <section id="usersSection" class="hidden">
+    <section id="usersSection">
       <h2>👥 Users</h2>
       <table id="usersTable">
         <thead>
           <tr><th>ID</th><th>Name</th><th>Email</th></tr>
         </thead>
-        <tbody>
-          <!-- Users removed (MongoDB integration gone) -->
-        </tbody>
+        <tbody></tbody>
       </table>
 
       <form id="addUserForm">
@@ -247,7 +240,6 @@
       </form>
     </section>
 
-    <!-- === CHAT === -->
     <section>
       <h2>💬 Borak Chat</h2>
       <div id="messages"></div>
@@ -261,8 +253,6 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-
-    /* === LOCAL USERS MANAGEMENT === */
     const users = [];
     const usersTableBody = document.querySelector("#usersTable tbody");
     const addUserForm = document.querySelector("#addUserForm");
@@ -287,26 +277,20 @@
       renderUsers();
     });
 
-    /* === LOGIN SYSTEM === */
     const loginOverlay = document.getElementById("loginOverlay");
     const loginBtn = document.getElementById("loginBtn");
     const usersSection = document.getElementById("usersSection");
 
     let currentUser = null;
 
-    // If user already in localStorage, auto-login
     if(localStorage.getItem("borakUser")) {
       currentUser = JSON.parse(localStorage.getItem("borakUser"));
       loginOverlay.style.display = "none";
-      usersSection.classList.remove("hidden");
       addUserButton.disabled = false;
-      if (!users.find(u => u.email === currentUser.email)) {
-        users.push(currentUser);
-      }
+      if (!users.find(u => u.email === currentUser.email)) users.push(currentUser);
       renderUsers();
     }
 
-    // Login button click
     loginBtn.addEventListener("click", () => {
       const name = document.getElementById("loginName").value.trim();
       const email = document.getElementById("loginEmail").value.trim();
@@ -314,21 +298,16 @@
 
       currentUser = { name, email };
       localStorage.setItem("borakUser", JSON.stringify(currentUser));
-
-      if (!users.find(u => u.email === email)) {
-        users.push(currentUser);
-      }
+      if (!users.find(u => u.email === email)) users.push(currentUser);
       renderUsers();
-
       loginOverlay.style.display = "none";
-      usersSection.classList.remove("hidden");
       addUserButton.disabled = false;
     });
 
-    /* === TOGGLE USERS MENU === */
+    /* === MENU SLIDE IN/OUT === */
     const menuToggle = document.getElementById("menuToggle");
     menuToggle.addEventListener("click", () => {
-      usersSection.classList.toggle("hidden");
+      usersSection.classList.toggle("show");
     });
 
     /* === CHAT === */
@@ -344,10 +323,7 @@
     function addMessage(msgData) {
       const div = document.createElement('div');
       div.classList.add('message', msgData.sender === clientId ? 'sent' : 'received');
-      div.innerHTML = `
-        ${msgData.text}
-        <span class="timestamp">${formatTime(msgData.time)}</span>
-      `;
+      div.innerHTML = `${msgData.text}<span class="timestamp">${formatTime(msgData.time)}</span>`;
       messages.appendChild(div);
       messages.scrollTop = messages.scrollHeight;
     }
@@ -357,11 +333,7 @@
       if (!input.value) return;
       if (!currentUser) return alert("Please login first!");
 
-      const msgData = { 
-        text: `${currentUser.name}: ${input.value}`, 
-        sender: clientId, 
-        time: new Date().toISOString() 
-      };
+      const msgData = { text: `${currentUser.name}: ${input.value}`, sender: clientId, time: new Date().toISOString() };
       socket.emit('chat message', msgData);
       input.value = '';
       addMessage(msgData);
